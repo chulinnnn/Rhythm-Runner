@@ -1,4 +1,4 @@
-# Rhythm Runner (Unity)
+# 2D game (Unity)
 
 This repository contains the Unity project for **Rhythm Runner**.
 
