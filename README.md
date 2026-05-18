@@ -1,6 +1,6 @@
 # 2D game (Unity)
 
-This repository contains the Unity project for **Rhythm Runner**.
+This repository contains the Unity project for **in-class 2D game**.
 
 ## This Session Gameplay Updates
 
