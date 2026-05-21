@@ -16,6 +16,7 @@ public class GameManager : MonoBehaviour {
     private Text goldText;
     private Text distanceText;
     private GameObject go;
+    private bool isGameOver = false;
     
 
     private BackgroundTranform bgT;
@@ -29,14 +30,32 @@ public class GameManager : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-        goldText = GameObject.Find("GoldText").GetComponent<Text>();
-        distanceText = GameObject.Find("DistanceText").GetComponent<Text>();
-        bgT = GameObject.Find("Background1").GetComponent<BackgroundTranform>();
+        GameObject goldTextObject = GameObject.Find("GoldText");
+        if (goldTextObject != null)
+        {
+            goldText = goldTextObject.GetComponent<Text>();
+        }
+
+        GameObject distanceTextObject = GameObject.Find("DistanceText");
+        if (distanceTextObject != null)
+        {
+            distanceText = distanceTextObject.GetComponent<Text>();
+        }
+
+        GameObject backgroundObject = GameObject.Find("Background1");
+        if (backgroundObject != null)
+        {
+            bgT = backgroundObject.GetComponent<BackgroundTranform>();
+        }
+
         go = GameObject.Find("GameOver");
 
         ApplySceneDifficulty();
 
-        go.SetActive(false);
+        if (go != null)
+        {
+            go.SetActive(false);
+        }
 	}
 
     private void ApplySceneDifficulty()
@@ -62,15 +81,37 @@ public class GameManager : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+        if (isGameOver)
+        {
+            return;
+        }
+
         UpdateDistance();
 	}
 
     private void UpdateDistance()
     {
+        if (bgT == null)
+        {
+            GameObject background = GameObject.Find("Background1");
+            if (background != null)
+            {
+                bgT = background.GetComponent<BackgroundTranform>();
+            }
+        }
+
+        if (bgT == null)
+        {
+            return;
+        }
+
         f_dis += bgT.moveSpeed * speedMultiplier * Time.deltaTime;
         dis = (int)f_dis;
-        
-        distanceText.text = dis.ToString();
+
+        if (distanceText != null)
+        {
+            distanceText.text = dis.ToString();
+        }
     }
 
     public int GetCurrentDistance()
@@ -80,24 +121,55 @@ public class GameManager : MonoBehaviour {
 
     public void GameOver()
     {
+        if (isGameOver)
+        {
+            return;
+        }
+
+        isGameOver = true;
         SoundManager.PlaySFX("shibai");
         LeaderboardManager.SaveScore(LeaderboardManager.GetModeFromActiveScene(), dis);
 
         GameObject[] bg = GameObject.FindGameObjectsWithTag("Background");
         foreach (GameObject i in bg)
         {
-            i.GetComponent<BackgroundTranform>().enabled = false;
+            BackgroundTranform backgroundTranform = i.GetComponent<BackgroundTranform>();
+            if (backgroundTranform != null)
+            {
+                backgroundTranform.enabled = false;
+            }
         }
-        GameObject.Find("Player").GetComponent<Animator>().enabled = false;
-        GameObject.Find("Player").GetComponent<PlayerController>().enabled = false;
+
+        GameObject player = GameObject.Find("Player");
+        if (player != null)
+        {
+            Animator playerAnimator = player.GetComponent<Animator>();
+            if (playerAnimator != null)
+            {
+                playerAnimator.enabled = false;
+            }
+
+            PlayerController playerController = player.GetComponent<PlayerController>();
+            if (playerController != null)
+            {
+                playerController.enabled = false;
+            }
+        }
+
         this.enabled = false;
-        go.SetActive(true);
+        if (go != null)
+        {
+            go.SetActive(true);
+        }
     }
 
     public void UpdateBonus(int count)
     {
         bonus += count;
-        goldText.text = bonus.ToString();
+        if (goldText != null)
+        {
+            goldText.text = bonus.ToString();
+        }
 
     }
 

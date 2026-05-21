@@ -11,6 +11,8 @@ public class PlayerController : MonoBehaviour {
     private Vector2 boxSize;
 
     public float jumpForce = 5f;
+    public float goodJumpMultiplier = 1.05f;
+    public float perfectJumpMultiplier = 1.12f;
     private bool IsGround = true;
     private bool canJump = true;
 
@@ -31,6 +33,7 @@ public class PlayerController : MonoBehaviour {
     private const float JiasuFixedY = 2f;
     private const float JiasuSpeedMultiplier = 2f;
     private const float JiasuTargetX = -4.5f;
+    private const float DefaultJumpForce = 5f;
 
 	// Use this for initialization
 	void Start () {
@@ -38,6 +41,11 @@ public class PlayerController : MonoBehaviour {
         rigidbody = GetComponent<Rigidbody2D>();
         boxCollider = GetComponent<BoxCollider2D>();
         //gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
+
+        if (jumpForce <= 0f)
+        {
+            jumpForce = DefaultJumpForce;
+        }
 
         boxSize = boxCollider.size;
 	}
@@ -58,15 +66,16 @@ public class PlayerController : MonoBehaviour {
         //float v = Input.GetAxis("Vertical");
 
         //控制跳跃
-        if (Input.GetKeyDown(KeyCode.UpArrow) && canJump)
+        if ((Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.Space)) && canJump)
         {
-            rigidbody.velocity = Vector2.up * jumpForce;
-            animator.SetBool("Jump", true);
-            IsGround = false;
-            canJump = false;
-            animator.SetBool("DoubleJump", false);
+            Jump();
         }
 
+
+        if (Input.GetKeyDown(KeyCode.DownArrow) && IsGround)
+        {
+            ReportRhythmInput("Slide");
+        }
 
         if (Input.GetKey(KeyCode.DownArrow) && IsGround)
         {
@@ -92,6 +101,46 @@ public class PlayerController : MonoBehaviour {
         {
             GameManager.Instance.GameOver();
         }
+    }
+
+    private void Jump()
+    {
+        RhythmTimingResult timing = ReportRhythmInput("Jump");
+        float rhythmJumpForce = GetRhythmJumpForce(timing);
+
+        rigidbody.velocity = new Vector2(rigidbody.velocity.x, rhythmJumpForce);
+        animator.SetBool("Jump", true);
+        animator.SetBool("DoubleJump", false);
+        animator.SetBool("Slide", false);
+        boxCollider.size = boxSize;
+
+        IsGround = false;
+        canJump = false;
+    }
+
+    private RhythmTimingResult ReportRhythmInput(string actionName)
+    {
+        if (RhythmManager.Instance == null)
+        {
+            return RhythmTimingResult.None;
+        }
+
+        return RhythmManager.Instance.ReportInput(actionName);
+    }
+
+    private float GetRhythmJumpForce(RhythmTimingResult timing)
+    {
+        if (timing == RhythmTimingResult.Perfect)
+        {
+            return jumpForce * perfectJumpMultiplier;
+        }
+
+        if (timing == RhythmTimingResult.Good)
+        {
+            return jumpForce * goodJumpMultiplier;
+        }
+
+        return jumpForce;
     }
 
     private void UpdateJiasuMode()
