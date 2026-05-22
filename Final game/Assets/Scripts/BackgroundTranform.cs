@@ -89,7 +89,7 @@ public class BackgroundTranform : MonoBehaviour {
         if (nextBg != null)
         {
             nextBg.createInitialNextSegment = false;
-            nextBg.spawnBarriersOnStart = ShouldSpawnEnemiesOnNewSegment();
+            nextBg.spawnBarriersOnStart = false;
 
             if (SceneDifficultySettings.Instance != null)
             {

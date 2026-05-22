@@ -374,6 +374,7 @@ GameObject:
   - component: {fileID: 444976}
   - component: {fileID: 21268878}
   - component: {fileID: 11448206}
+  - component: {fileID: 5342916694552201781}
   m_Layer: 0
   m_Name: Background1 (4)
   m_TagString: Background
@@ -396,6 +397,7 @@ Transform:
   m_Children:
   - {fileID: 443448}
   - {fileID: 475918}
+  - {fileID: 5698738300323930111}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &21268878
@@ -463,8 +465,75 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 8
+  createInitialNextSegment: 1
+  spawnBarriersOnStart: 1
+  nextSegmentSpawnX: 20
+  disableStaticBarrierChildren: 1
+  staticBarrierTag: EnemyBarrier
   mapPrefabs:
   - {fileID: 116968, guid: 12cf4cdf3cccecb40b88d390208437f8, type: 3}
   - {fileID: 157016, guid: d1559bf9cc2a3124f8e0ad376b61555c, type: 3}
   - {fileID: 159286, guid: e89ce3795201c6c4f97d322f982219dd, type: 3}
   - {fileID: 125544, guid: 670b626babc1a3948b9c6b3f44f52dc7, type: 3}
+--- !u!114 &5342916694552201781
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 194580}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b0ccb77af9c07f4fa182cbec016d067, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  barrierPoints:
+  - {fileID: 5698738300323930111}
+  barrierPrefabs:
+  - {fileID: 1474772219734632094, guid: 9c9a437fc6c0e4a40a23f32c017772be, type: 3}
+  spawnOnBeat: 1
+  bpm: 107
+  beatObstacleCount: 4
+  beatsBetweenObstacles: 2
+  firstObstacleBeat: 4
+  playerMeetX: -4.5
+  fallbackMoveSpeed: 2
+  beatObstaclesMoveIndependently: 1
+  parentBeatObstaclesToNearestBackground: 1
+  maxBackgroundAttachDistance: 14
+  snapBeatObstaclesToGround: 1
+  groundYOffset: 0
+  createFallbackObstacleIfMissing: 1
+  fallbackObstacleSize: {x: 0.75, y: 0.75}
+  fallbackObstacleColor: {r: 1, g: 0.35, b: 0.15, a: 1}
+--- !u!1 &1452718745960556012
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5698738300323930111}
+  m_Layer: 0
+  m_Name: BarriersPoint1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5698738300323930111
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1452718745960556012}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.77, y: -0.6, z: -3}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 444976}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
