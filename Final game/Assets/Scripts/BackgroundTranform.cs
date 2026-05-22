@@ -5,6 +5,11 @@ using UnityEngine.SceneManagement;
 public class BackgroundTranform : MonoBehaviour {
 
     public float moveSpeed = 2f;
+    public bool createInitialNextSegment = true;
+    public bool spawnBarriersOnStart = true;
+    public float nextSegmentSpawnX = 20f;
+    public bool disableStaticBarrierChildren = true;
+    public string staticBarrierTag = "EnemyBarrier";
 
     //private Barrier barrier;
     public GameObject[] mapPrefabs;
@@ -16,7 +21,12 @@ public class BackgroundTranform : MonoBehaviour {
 
 	void Start () {
         ApplySceneSettings();
-        TrySpawnEnemies();
+        DisableStaticBarrierChildren(gameObject);
+        CreateInitialNextSegmentIfNeeded();
+        if (spawnBarriersOnStart)
+        {
+            TrySpawnEnemies();
+        }
 	}
 
     private void ApplySceneSettings()
@@ -72,20 +82,50 @@ public class BackgroundTranform : MonoBehaviour {
         }
 
         int i = Random.Range(0, prefabs.Length);
-        GameObject segment = GameObject.Instantiate(prefabs[i], new Vector3(20, 0, 0), Quaternion.identity);
+        GameObject segment = GameObject.Instantiate(prefabs[i], new Vector3(nextSegmentSpawnX, 0, 0), Quaternion.identity);
+        DisableStaticBarrierChildren(segment);
 
         BackgroundTranform nextBg = segment.GetComponent<BackgroundTranform>();
-        if (nextBg != null && SceneDifficultySettings.Instance != null)
+        if (nextBg != null)
         {
-            nextBg.moveSpeed = SceneDifficultySettings.Instance.GetBackgroundMoveSpeed();
-            GameObject[] scenePrefabs = SceneDifficultySettings.Instance.GetMapPrefabs();
-            if (scenePrefabs != null && scenePrefabs.Length > 0)
+            nextBg.createInitialNextSegment = false;
+            nextBg.spawnBarriersOnStart = ShouldSpawnEnemiesOnNewSegment();
+
+            if (SceneDifficultySettings.Instance != null)
             {
-                nextBg.mapPrefabs = scenePrefabs;
+                nextBg.moveSpeed = SceneDifficultySettings.Instance.GetBackgroundMoveSpeed();
+                GameObject[] scenePrefabs = SceneDifficultySettings.Instance.GetMapPrefabs();
+                if (scenePrefabs != null && scenePrefabs.Length > 0)
+                {
+                    nextBg.mapPrefabs = scenePrefabs;
+                }
+            }
+            else
+            {
+                nextBg.moveSpeed = moveSpeed;
+                nextBg.mapPrefabs = mapPrefabs;
             }
         }
 
-        TrySpawnEnemiesOnSegment(segment);
+        if (ShouldSpawnEnemiesOnNewSegment())
+        {
+            TrySpawnEnemiesOnSegment(segment);
+        }
+    }
+
+    private void CreateInitialNextSegmentIfNeeded()
+    {
+        if (!createInitialNextSegment)
+        {
+            return;
+        }
+
+        if (Mathf.Abs(transform.position.x) > 0.1f)
+        {
+            return;
+        }
+
+        CreateBackground();
     }
 
     private void TrySpawnEnemies()
@@ -93,25 +133,68 @@ public class BackgroundTranform : MonoBehaviour {
         TrySpawnEnemiesOnSegment(gameObject);
     }
 
+    private bool ShouldSpawnEnemiesOnNewSegment()
+    {
+        if (SceneDifficultySettings.Instance != null)
+        {
+            return true;
+        }
+
+        return SceneManager.GetActiveScene().name.Contains("Game2");
+    }
+
     private void TrySpawnEnemiesOnSegment(GameObject segment)
     {
-        if (SceneDifficultySettings.Instance != null && !SceneDifficultySettings.Instance.ShouldAutoSpawnEnemies())
-        {
-            return;
-        }
-
-        bool isHardScene = SceneManager.GetActiveScene().name.Contains("Game2");
-        if (SceneDifficultySettings.Instance == null && !isHardScene)
-        {
-            return;
-        }
-
         Barrier barrier = segment.GetComponent<Barrier>();
         if (barrier == null)
         {
             return;
         }
 
+        if (SceneDifficultySettings.Instance != null)
+        {
+            if (!SceneDifficultySettings.Instance.ShouldAutoSpawnEnemies())
+            {
+                return;
+            }
+        }
+        else
+        {
+            bool isHardScene = SceneManager.GetActiveScene().name.Contains("Game2");
+            if (!isHardScene && !barrier.spawnOnBeat)
+            {
+                return;
+            }
+        }
+
         barrier.RespawnBarriers();
+    }
+
+    private void DisableStaticBarrierChildren(GameObject segment)
+    {
+        if (!disableStaticBarrierChildren || segment == null || string.IsNullOrEmpty(staticBarrierTag))
+        {
+            return;
+        }
+
+        Transform[] children = segment.GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < children.Length; i++)
+        {
+            Transform child = children[i];
+            if (child == null || child == segment.transform)
+            {
+                continue;
+            }
+
+            if (child.GetComponentInParent<RhythmGeneratedObstacle>() != null)
+            {
+                continue;
+            }
+
+            if (child.CompareTag(staticBarrierTag))
+            {
+                child.gameObject.SetActive(false);
+            }
+        }
     }
 }

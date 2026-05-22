@@ -22,6 +22,14 @@ public class SceneDifficultySettings : MonoBehaviour
     public int minEnemiesPerPoint = 1;
     public int maxEnemiesPerPoint = 2;
 
+    [Header("Rhythm enemy spawn")]
+    public bool spawnEnemiesOnBeat = true;
+    public float obstacleBpm = 107f;
+    public int beatObstacleCount = 4;
+    public int beatsBetweenObstacles = 2;
+    public int firstObstacleBeat = 4;
+    public float playerMeetX = -4.5f;
+
     void Awake()
     {
         Instance = this;
@@ -70,6 +78,25 @@ public class SceneDifficultySettings : MonoBehaviour
         maxPointIndex = maxBarrierPointIndex;
         minEnemyCount = minEnemiesPerPoint;
         maxEnemyCount = maxEnemiesPerPoint;
+    }
+
+    public bool ShouldSpawnEnemiesOnBeat()
+    {
+        return spawnEnemiesOnBeat;
+    }
+
+    public void GetRhythmSpawnSettings(
+        out float bpm,
+        out int obstacleCount,
+        out int beatSpacing,
+        out int firstBeat,
+        out float meetX)
+    {
+        bpm = obstacleBpm;
+        obstacleCount = Mathf.Max(1, beatObstacleCount);
+        beatSpacing = Mathf.Max(1, beatsBetweenObstacles);
+        firstBeat = Mathf.Max(0, firstObstacleBeat);
+        meetX = playerMeetX;
     }
 
     private void ApplyHardSceneDefaultsIfNeeded()
