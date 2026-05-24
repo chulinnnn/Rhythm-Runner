@@ -22,6 +22,7 @@ public class BackgroundTranform : MonoBehaviour {
 	void Start () {
         ApplySceneSettings();
         DisableStaticBarrierChildren(gameObject);
+        RhythmGroundGapGenerator.ApplyToSegment(gameObject);
         CreateInitialNextSegmentIfNeeded();
         if (spawnBarriersOnStart)
         {
@@ -83,7 +84,6 @@ public class BackgroundTranform : MonoBehaviour {
 
         int i = Random.Range(0, prefabs.Length);
         GameObject segment = GameObject.Instantiate(prefabs[i], new Vector3(nextSegmentSpawnX, 0, 0), Quaternion.identity);
-        DisableStaticBarrierChildren(segment);
 
         BackgroundTranform nextBg = segment.GetComponent<BackgroundTranform>();
         if (nextBg != null)
@@ -106,6 +106,9 @@ public class BackgroundTranform : MonoBehaviour {
                 nextBg.mapPrefabs = mapPrefabs;
             }
         }
+
+        DisableStaticBarrierChildren(segment);
+        RhythmGroundGapGenerator.ApplyToSegment(segment);
 
         if (ShouldSpawnEnemiesOnNewSegment())
         {
@@ -191,10 +194,34 @@ public class BackgroundTranform : MonoBehaviour {
                 continue;
             }
 
-            if (child.CompareTag(staticBarrierTag))
+            if (IsStaticBarrierObject(child.gameObject))
             {
                 child.gameObject.SetActive(false);
             }
         }
+    }
+
+    private bool IsStaticBarrierObject(GameObject obj)
+    {
+        if (obj == null)
+        {
+            return false;
+        }
+
+        if (obj.CompareTag(staticBarrierTag))
+        {
+            return true;
+        }
+
+        string objectName = obj.name;
+        if (objectName.StartsWith("BarriersPoint"))
+        {
+            return false;
+        }
+
+        return objectName == "Barrier"
+            || objectName.StartsWith("Barrier1")
+            || objectName.StartsWith("Barrier4")
+            || objectName.StartsWith("CubeBarrier");
     }
 }

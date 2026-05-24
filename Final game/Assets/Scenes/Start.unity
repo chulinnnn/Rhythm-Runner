@@ -269,6 +269,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sceneIndex: 0
+  sceneName: 
 --- !u!1 &107068510
 GameObject:
   m_ObjectHideFlags: 0
@@ -1512,6 +1513,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sceneIndex: 1
+  sceneName: Tutorial
 --- !u!1 &1550588594
 GameObject:
   m_ObjectHideFlags: 0
@@ -1647,6 +1649,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sceneIndex: 2
+  sceneName: 
 --- !u!850595691 &1829635666
 LightingSettings:
   m_ObjectHideFlags: 0

@@ -297,7 +297,7 @@ MonoBehaviour:
   barrierPrefabs:
   - {fileID: 1474772219734632094, guid: 9c9a437fc6c0e4a40a23f32c017772be, type: 3}
   spawnOnBeat: 1
-  bpm: 107
+  bpm: 126
   beatObstacleCount: 4
   beatsBetweenObstacles: 2
   firstObstacleBeat: 4

@@ -226,6 +226,63 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!1 &51322545
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 51322547}
+  - component: {fileID: 51322546}
+  m_Layer: 0
+  m_Name: TutorialFlowManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &51322546
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 51322545}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42af777302886d746a1e26144150c587, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  requiredStreak: 8
+  targetSceneName: Game
+  introDuration: 1.4
+  countdownStepDuration: 0.7
+  successDelay: 0.6
+  tutorialBpm: 126
+  beatsBetweenObstacles: 2
+  beatObstacleCount: 16
+  firstObstacleBeat: 6
+  backgroundPrefab: {fileID: 116968, guid: 12cf4cdf3cccecb40b88d390208437f8, type: 3}
+  uiController: {fileID: 1326032105}
+  rhythmManager: {fileID: 0}
+  gameManager: {fileID: 0}
+--- !u!4 &51322547
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 51322545}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &73386942
 GameObject:
   m_ObjectHideFlags: 0
@@ -1207,9 +1264,9 @@ MonoBehaviour:
   - {fileID: 1474772219734632094, guid: 9c9a437fc6c0e4a40a23f32c017772be, type: 3}
   spawnOnBeat: 1
   bpm: 126
-  beatObstacleCount: 4
+  beatObstacleCount: 16
   beatsBetweenObstacles: 2
-  firstObstacleBeat: 4
+  firstObstacleBeat: 6
   playerMeetX: -4.5
   fallbackMoveSpeed: 2
   beatObstaclesMoveIndependently: 1
@@ -1613,72 +1670,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!1 &910000000
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 910000001}
-  - component: {fileID: 910000002}
-  m_Layer: 0
-  m_Name: SceneDifficultySettings
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &910000001
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 910000000}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &910000002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 910000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 374112c77dcc22d41959bff3929f10df, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  backgroundMoveSpeed: 8
-  mapPrefabs:
-  - {fileID: 116968, guid: 12cf4cdf3cccecb40b88d390208437f8, type: 3}
-  extraSpeedMultiplier: 1
-  autoSpawnEnemies: 1
-  minBarrierPointIndex: 0
-  maxBarrierPointIndex: 0
-  minEnemiesPerPoint: 1
-  maxEnemiesPerPoint: 1
-  spawnEnemiesOnBeat: 1
-  obstacleBpm: 126
-  beatObstacleCount: 8
-  beatsBetweenObstacles: 2
-  firstObstacleBeat: 4
-  playerMeetX: -4.5
-  spawnGapsOnBeat: 1
-  firstGapBeat: 12
-  beatsBetweenGaps: 8
-  gapDurationBeats: 0.4
-  minGapWorldWidth: 1.15
-  maxGapWorldWidth: 1.65
-  generatedGroundColor: {r: 0.55, g: 0.36, b: 0.16, a: 1}
 --- !u!1 &917934663
 GameObject:
   m_ObjectHideFlags: 0
@@ -2273,6 +2264,59 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &1326032104
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1326032106}
+  - component: {fileID: 1326032105}
+  m_Layer: 0
+  m_Name: TutorialUIController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1326032105
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1326032104}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3d0f1227e16b50488b04364bb452008, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  coachImage: {fileID: 0}
+  jumpIcon: {fileID: 0}
+  beatIcon: {fileID: 0}
+  successImage: {fileID: 0}
+  panelColor: {r: 0.04, g: 0.06, b: 0.08, a: 0.78}
+  accentColor: {r: 1, g: 0.78, b: 0.18, a: 1}
+  goodColor: {r: 0.18, g: 0.86, b: 1, a: 1}
+  missColor: {r: 1, g: 0.22, b: 0.18, a: 1}
+  textColor: {r: 1, g: 1, b: 1, a: 1}
+--- !u!4 &1326032106
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1326032104}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1327271709
 GameObject:
   m_ObjectHideFlags: 0
@@ -2357,6 +2401,65 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &1416740974
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1416740976}
+  - component: {fileID: 1416740975}
+  m_Layer: 0
+  m_Name: SceneDifficultySettings
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1416740975
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1416740974}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 374112c77dcc22d41959bff3929f10df, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  backgroundMoveSpeed: 8
+  mapPrefabs:
+  - {fileID: 116968, guid: 12cf4cdf3cccecb40b88d390208437f8, type: 3}
+  extraSpeedMultiplier: 1
+  autoSpawnEnemies: 1
+  minBarrierPointIndex: 0
+  maxBarrierPointIndex: 0
+  minEnemiesPerPoint: 1
+  maxEnemiesPerPoint: 1
+  spawnEnemiesOnBeat: 1
+  obstacleBpm: 126
+  beatObstacleCount: 16
+  beatsBetweenObstacles: 2
+  firstObstacleBeat: 6
+  playerMeetX: -4.5
+--- !u!4 &1416740976
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1416740974}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1667512645
 GameObject:
   m_ObjectHideFlags: 0
@@ -2541,7 +2644,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speedMultiplier: 1
-  saveScoreOnGameOver: 1
+  saveScoreOnGameOver: 0
 --- !u!4 &1728981519
 Transform:
   m_ObjectHideFlags: 0
@@ -3169,4 +3272,6 @@ SceneRoots:
   - {fileID: 374049889}
   - {fileID: 2033485563}
   - {fileID: 1005368683}
-  - {fileID: 910000001}
+  - {fileID: 1416740976}
+  - {fileID: 1326032106}
+  - {fileID: 51322547}

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 public class GameManager : MonoBehaviour {
 
@@ -22,6 +23,9 @@ public class GameManager : MonoBehaviour {
     private BackgroundTranform bgT;
 
     public float speedMultiplier = 1f;
+    public bool saveScoreOnGameOver = true;
+    public bool IsGameOver { get { return isGameOver; } }
+    public event System.Action GameOverStarted;
 
     void Awake()
     {
@@ -128,7 +132,10 @@ public class GameManager : MonoBehaviour {
 
         isGameOver = true;
         SoundManager.PlaySFX("shibai");
-        LeaderboardManager.SaveScore(LeaderboardManager.GetModeFromActiveScene(), dis);
+        if (saveScoreOnGameOver)
+        {
+            LeaderboardManager.SaveScore(LeaderboardManager.GetModeFromActiveScene(), dis);
+        }
 
         GameObject[] bg = GameObject.FindGameObjectsWithTag("Background");
         foreach (GameObject i in bg)
@@ -161,6 +168,11 @@ public class GameManager : MonoBehaviour {
         {
             go.SetActive(true);
         }
+
+        if (GameOverStarted != null)
+        {
+            GameOverStarted();
+        }
     }
 
     public void UpdateBonus(int count)
@@ -175,12 +187,15 @@ public class GameManager : MonoBehaviour {
 
     public void RestartClick()
     {
-        Application.LoadLevel(1);
-        go.SetActive(false);
+        SceneTransitionManager.LoadScene(SceneManager.GetActiveScene().name);
+        if (go != null)
+        {
+            go.SetActive(false);
+        }
     }
 
     public void ExitClick()
     {
-        Application.LoadLevel(0);
+        SceneTransitionManager.LoadScene("Start");
     }
 }

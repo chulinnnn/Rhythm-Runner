@@ -13,11 +13,12 @@ public enum RhythmTimingResult
 public class RhythmManager : MonoBehaviour
 {
     public static RhythmManager Instance { get; private set; }
+    public event System.Action<RhythmTimingResult, string> InputReported;
 
     [Header("Music timing")]
     public AudioSource musicSource;
-    public string fallbackMusicObjectName = "146bpm";
-    public float bpm = 107f;
+    public string fallbackMusicObjectName = "126bpm";
+    public float bpm = 126f;
     public float firstBeatOffset = 0f;
 
     [Header("Timing windows")]
@@ -40,7 +41,7 @@ public class RhythmManager : MonoBehaviour
     public string correctObjectName = "correct";
     public string goodObjectName = "good";
     public string missObjectName = "miss";
-    public float visualizationBpm = 107f;
+    public float visualizationBpm = 126f;
     public float visualizationPulseScale = 1.35f;
     public float visualizationPulseDuration = 0.12f;
     public float resultVisualDuration = 0.35f;
@@ -166,7 +167,16 @@ public class RhythmManager : MonoBehaviour
         ShowFeedback(result, actionName);
         ShowResultVisual(result);
         AwardScore(result);
+        if (InputReported != null)
+        {
+            InputReported(result, actionName);
+        }
         return result;
+    }
+
+    public float GetAdjustedSongTime()
+    {
+        return GetSongTime();
     }
 
     public void SetVisualizationEnabled(bool enabled)

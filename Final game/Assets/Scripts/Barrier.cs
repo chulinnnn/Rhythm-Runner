@@ -1,11 +1,14 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Barrier : MonoBehaviour {
 
+    private static readonly HashSet<int> claimedBeatIndices = new HashSet<int>();
+
     public Transform[] barrierPoints;
     public GameObject[] barrierPrefabs;
     public bool spawnOnBeat = true;
-    public float bpm = 107f;
+    public float bpm = 126f;
     public int beatObstacleCount = 4;
     public int beatsBetweenObstacles = 2;
     public int firstObstacleBeat = 4;
@@ -19,7 +22,6 @@ public class Barrier : MonoBehaviour {
     public bool createFallbackObstacleIfMissing = true;
     public Vector2 fallbackObstacleSize = new Vector2(0.75f, 0.75f);
     public Color fallbackObstacleColor = new Color(1f, 0.35f, 0.15f);
-
     public void CreateBarriers()
     {
         if (barrierPoints == null || barrierPoints.Length == 0)
@@ -107,27 +109,57 @@ public class Barrier : MonoBehaviour {
         minPointIndex = Mathf.Clamp(minPointIndex, 0, maxPointIndex);
 
         float moveSpeed = GetSegmentMoveSpeed();
-        float beatDistance = moveSpeed * (60f / Mathf.Max(1f, beatBpm));
+        float beatInterval = 60f / Mathf.Max(1f, beatBpm);
         int validPointCount = maxPointIndex - minPointIndex + 1;
+        float songTime = GetCurrentRhythmSongTime();
+        float minX;
+        float maxX;
+        GetSegmentOwnershipBounds(out minX, out maxX);
 
-        for (int i = 0; i < obstacleCount; i++)
+        float minSongTime = songTime + (minX - meetX) / moveSpeed;
+        float maxSongTime = songTime + (maxX - meetX) / moveSpeed;
+        int minBeatIndex = Mathf.Max(startBeat, Mathf.CeilToInt(minSongTime / beatInterval));
+        int maxBeatIndex = Mathf.Max(minBeatIndex, Mathf.FloorToInt(maxSongTime / beatInterval));
+        int firstAlignedBeat = GetFirstAlignedBeat(startBeat, beatSpacing, minBeatIndex);
+        int placedCount = 0;
+
+        for (int beat = firstAlignedBeat; beat <= maxBeatIndex && placedCount < obstacleCount; beat += beatSpacing)
         {
-            int pointIndex = minPointIndex + i % validPointCount;
+            if (ShouldSkipBeatForGroundGap(beat))
+            {
+                continue;
+            }
+
+            if (!TryClaimBeat(beat))
+            {
+                continue;
+            }
+
+            float targetSongTime = beat * beatInterval;
+            float worldX = meetX + moveSpeed * (targetSongTime - songTime);
+            if (worldX < minX || worldX >= maxX)
+            {
+                ReleaseClaimedBeat(beat);
+                continue;
+            }
+
+            int sequence = Mathf.Max(0, (beat - startBeat) / Mathf.Max(1, beatSpacing));
+            int pointIndex = minPointIndex + sequence % validPointCount;
             Transform spawnPoint = barrierPoints[pointIndex];
             if (spawnPoint == null)
             {
+                ReleaseClaimedBeat(beat);
                 continue;
             }
 
-            int prefabIndex = barrierPrefabs == null || barrierPrefabs.Length == 0 ? -1 : i % barrierPrefabs.Length;
+            int prefabIndex = barrierPrefabs == null || barrierPrefabs.Length == 0 ? -1 : sequence % barrierPrefabs.Length;
             GameObject prefab = GetBarrierPrefab(prefabIndex);
             if (prefab == null)
             {
+                ReleaseClaimedBeat(beat);
                 continue;
             }
 
-            int beat = startBeat + i * beatSpacing;
-            float worldX = meetX + beat * beatDistance;
             float worldY = spawnPoint.position.y + prefab.transform.position.y;
             Vector3 worldPosition = new Vector3(worldX, worldY, spawnPoint.position.z);
 
@@ -135,13 +167,12 @@ public class Barrier : MonoBehaviour {
             {
                 GameObject enemy = Instantiate(prefab, worldPosition, Quaternion.identity);
                 enemy.SetActive(true);
-                MarkAsRhythmGenerated(enemy);
+                MarkAsRhythmGenerated(enemy, beat);
                 SnapObstacleToGround(enemy, spawnPoint.position.y + groundYOffset);
 
-                Transform backgroundParent = FindNearestBackground(worldX);
-                if (parentBeatObstaclesToNearestBackground && backgroundParent != null)
+                if (parentBeatObstaclesToNearestBackground)
                 {
-                    enemy.transform.SetParent(backgroundParent, true);
+                    enemy.transform.SetParent(transform, true);
                 }
                 else
                 {
@@ -157,16 +188,47 @@ public class Barrier : MonoBehaviour {
             {
                 GameObject enemy = Instantiate(prefab, Vector3.zero, Quaternion.identity);
                 enemy.SetActive(true);
-                MarkAsRhythmGenerated(enemy);
+                MarkAsRhythmGenerated(enemy, beat);
                 enemy.transform.SetParent(spawnPoint, false);
                 enemy.transform.position = worldPosition;
                 SnapObstacleToGround(enemy, spawnPoint.position.y + groundYOffset);
             }
+
+            placedCount++;
         }
+    }
+
+    private int GetFirstAlignedBeat(int startBeat, int beatSpacing, int minimumBeatIndex)
+    {
+        if (minimumBeatIndex <= startBeat)
+        {
+            return startBeat;
+        }
+
+        int offset = minimumBeatIndex - startBeat;
+        int remainder = offset % Mathf.Max(1, beatSpacing);
+        if (remainder == 0)
+        {
+            return minimumBeatIndex;
+        }
+
+        return minimumBeatIndex + (Mathf.Max(1, beatSpacing) - remainder);
+    }
+
+    private bool ShouldSkipBeatForGroundGap(int beat)
+    {
+        if (SceneDifficultySettings.Instance == null)
+        {
+            return false;
+        }
+
+        return SceneDifficultySettings.Instance.ShouldSkipRhythmObstacleBeat(beat);
     }
 
     public void ClearSpawnedBarriers()
     {
+        ClearGeneratedBarriersInSegment();
+
         if (barrierPoints == null)
         {
             return;
@@ -250,12 +312,42 @@ public class Barrier : MonoBehaviour {
     private float GetSegmentMoveSpeed()
     {
         BackgroundTranform background = GetComponent<BackgroundTranform>();
+        float speed = fallbackMoveSpeed;
         if (background != null)
         {
-            return Mathf.Max(0.1f, background.moveSpeed);
+            speed = background.moveSpeed;
         }
 
-        return Mathf.Max(0.1f, fallbackMoveSpeed);
+        if (GameManager.Instance != null)
+        {
+            speed *= GameManager.Instance.speedMultiplier;
+        }
+
+        return Mathf.Max(0.1f, speed);
+    }
+
+    private float GetCurrentRhythmSongTime()
+    {
+        if (RhythmManager.Instance != null)
+        {
+            return RhythmManager.Instance.GetAdjustedSongTime();
+        }
+
+        return Time.time;
+    }
+
+    private void GetSegmentOwnershipBounds(out float minX, out float maxX)
+    {
+        BackgroundTranform background = GetComponent<BackgroundTranform>();
+        float segmentWidth = maxBackgroundAttachDistance * 2f;
+        if (background != null)
+        {
+            segmentWidth = Mathf.Max(0.1f, background.nextSegmentSpawnX);
+        }
+
+        float halfWidth = segmentWidth * 0.5f;
+        minX = transform.position.x - halfWidth;
+        maxX = transform.position.x + halfWidth;
     }
 
     private GameObject GetBarrierPrefab(int prefabIndex)
@@ -303,30 +395,6 @@ public class Barrier : MonoBehaviour {
         return Sprite.Create(texture, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 1f);
     }
 
-    private Transform FindNearestBackground(float worldX)
-    {
-        BackgroundTranform[] backgrounds = FindObjectsOfType<BackgroundTranform>();
-        Transform nearest = null;
-        float nearestDistance = maxBackgroundAttachDistance;
-
-        for (int i = 0; i < backgrounds.Length; i++)
-        {
-            if (backgrounds[i] == null)
-            {
-                continue;
-            }
-
-            float distance = Mathf.Abs(backgrounds[i].transform.position.x - worldX);
-            if (distance <= nearestDistance)
-            {
-                nearestDistance = distance;
-                nearest = backgrounds[i].transform;
-            }
-        }
-
-        return nearest;
-    }
-
     private void SnapObstacleToGround(GameObject obstacle, float groundY)
     {
         if (!snapBeatObstaclesToGround || obstacle == null)
@@ -372,11 +440,57 @@ public class Barrier : MonoBehaviour {
         return false;
     }
 
-    private void MarkAsRhythmGenerated(GameObject obstacle)
+    private void MarkAsRhythmGenerated(GameObject obstacle, int beat)
     {
-        if (obstacle != null && obstacle.GetComponent<RhythmGeneratedObstacle>() == null)
+        if (obstacle == null)
         {
-            obstacle.AddComponent<RhythmGeneratedObstacle>();
+            return;
         }
+
+        RhythmGeneratedObstacle marker = obstacle.GetComponent<RhythmGeneratedObstacle>();
+        if (marker == null)
+        {
+            marker = obstacle.AddComponent<RhythmGeneratedObstacle>();
+        }
+
+        marker.beatIndex = beat;
+        obstacle.name = "RhythmBarrier_Beat_" + beat;
+    }
+
+    private void ClearGeneratedBarriersInSegment()
+    {
+        RhythmGeneratedObstacle[] generated = GetComponentsInChildren<RhythmGeneratedObstacle>(true);
+        for (int i = generated.Length - 1; i >= 0; i--)
+        {
+            if (generated[i] != null)
+            {
+                ReleaseClaimedBeat(generated[i].beatIndex);
+                Destroy(generated[i].gameObject);
+            }
+        }
+    }
+
+    private bool TryClaimBeat(int beat)
+    {
+        if (claimedBeatIndices.Contains(beat))
+        {
+            return false;
+        }
+
+        claimedBeatIndices.Add(beat);
+        return true;
+    }
+
+    private void ReleaseClaimedBeat(int beat)
+    {
+        if (beat >= 0)
+        {
+            claimedBeatIndices.Remove(beat);
+        }
+    }
+
+    public static void ResetGlobalBeatState()
+    {
+        claimedBeatIndices.Clear();
     }
 }

@@ -1,51 +1,47 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+锘縰sing UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class ChangeScene : MonoBehaviour
 {
-    //按钮
     private Button clickBtn;
-    //场景索引
     public int sceneIndex;
-    
-    // Start is called before the first frame update
+    public string sceneName;
+
     void Start()
     {
-        //获取按钮
         clickBtn = GetComponent<Button>();
-        //如果按钮不为空
         if (clickBtn != null)
         {
-            //添加点击事件
-            clickBtn.onClick.AddListener(LoadScene);
+            clickBtn.onClick.AddListener(LoadConfiguredScene);
         }
     }
 
-    // Update is called once per frame
-    void Update()
+    private void LoadConfiguredScene()
     {
-        
+        if (!string.IsNullOrEmpty(sceneName))
+        {
+            SceneTransitionManager.LoadScene(sceneName);
+            return;
+        }
+
+        SceneTransitionManager.LoadScene(sceneIndex);
     }
-    //读取场景
-    private void LoadScene()
-    {
-        //读取场景
-        SceneManager.LoadScene(sceneIndex);
-    }
-    //选择
+
     public void OnChangeScene(int sceneIndex)
     {
-        //选择场景
-        SceneManager.LoadScene(sceneIndex);
+        SceneTransitionManager.LoadScene(sceneIndex);
     }
-    //退出
+
+    public void OnChangeScene(string sceneName)
+    {
+        SceneTransitionManager.LoadScene(sceneName);
+    }
+
     public void EG()
     {
 #if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
+        UnityEditor.EditorApplication.isPlaying = false;
 #else
         Application.Quit();
 #endif

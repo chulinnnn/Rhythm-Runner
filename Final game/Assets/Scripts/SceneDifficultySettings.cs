@@ -24,15 +24,25 @@ public class SceneDifficultySettings : MonoBehaviour
 
     [Header("Rhythm enemy spawn")]
     public bool spawnEnemiesOnBeat = true;
-    public float obstacleBpm = 107f;
+    public float obstacleBpm = 126f;
     public int beatObstacleCount = 4;
     public int beatsBetweenObstacles = 2;
     public int firstObstacleBeat = 4;
     public float playerMeetX = -4.5f;
 
+    [Header("Rhythm ground gaps")]
+    public bool spawnGapsOnBeat = false;
+    public int firstGapBeat = 12;
+    public int beatsBetweenGaps = 8;
+    public float gapDurationBeats = 0.4f;
+    public float minGapWorldWidth = 1.15f;
+    public float maxGapWorldWidth = 1.65f;
+    public Color generatedGroundColor = new Color(0.55f, 0.36f, 0.16f, 1f);
+
     void Awake()
     {
         Instance = this;
+        Barrier.ResetGlobalBeatState();
         ApplyHardSceneDefaultsIfNeeded();
     }
 
@@ -97,6 +107,45 @@ public class SceneDifficultySettings : MonoBehaviour
         beatSpacing = Mathf.Max(1, beatsBetweenObstacles);
         firstBeat = Mathf.Max(0, firstObstacleBeat);
         meetX = playerMeetX;
+    }
+
+    public bool ShouldSpawnGapsOnBeat()
+    {
+        return spawnGapsOnBeat;
+    }
+
+    public void GetRhythmGapSettings(
+        out float bpm,
+        out int firstBeat,
+        out int beatSpacing,
+        out float durationBeats,
+        out float minWorldWidth,
+        out float maxWorldWidth,
+        out float meetX)
+    {
+        bpm = obstacleBpm;
+        firstBeat = Mathf.Max(0, firstGapBeat);
+        beatSpacing = Mathf.Max(1, beatsBetweenGaps);
+        durationBeats = Mathf.Max(0.1f, gapDurationBeats);
+        minWorldWidth = Mathf.Max(0.1f, minGapWorldWidth);
+        maxWorldWidth = Mathf.Max(minWorldWidth, maxGapWorldWidth);
+        meetX = playerMeetX;
+    }
+
+    public bool ShouldSkipRhythmObstacleBeat(int beat)
+    {
+        if (!spawnGapsOnBeat)
+        {
+            return false;
+        }
+
+        int spacing = Mathf.Max(1, beatsBetweenGaps);
+        if (beat < firstGapBeat)
+        {
+            return false;
+        }
+
+        return (beat - firstGapBeat) % spacing == 0;
     }
 
     private void ApplyHardSceneDefaultsIfNeeded()
