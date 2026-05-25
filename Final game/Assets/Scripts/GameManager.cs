@@ -175,6 +175,43 @@ public class GameManager : MonoBehaviour {
         }
     }
 
+    public void RecoverFromTutorialRetry()
+    {
+        isGameOver = false;
+        this.enabled = true;
+
+        GameObject[] bg = GameObject.FindGameObjectsWithTag("Background");
+        foreach (GameObject i in bg)
+        {
+            BackgroundTranform backgroundTranform = i.GetComponent<BackgroundTranform>();
+            if (backgroundTranform != null)
+            {
+                backgroundTranform.enabled = true;
+            }
+        }
+
+        GameObject player = GameObject.Find("Player");
+        if (player != null)
+        {
+            Animator playerAnimator = player.GetComponent<Animator>();
+            if (playerAnimator != null)
+            {
+                playerAnimator.enabled = true;
+            }
+
+            PlayerController playerController = player.GetComponent<PlayerController>();
+            if (playerController != null)
+            {
+                playerController.enabled = true;
+            }
+        }
+
+        if (go != null)
+        {
+            go.SetActive(false);
+        }
+    }
+
     public void UpdateBonus(int count)
     {
         bonus += count;

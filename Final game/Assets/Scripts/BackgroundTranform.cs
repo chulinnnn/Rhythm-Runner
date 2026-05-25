@@ -22,7 +22,10 @@ public class BackgroundTranform : MonoBehaviour {
 	void Start () {
         ApplySceneSettings();
         DisableStaticBarrierChildren(gameObject);
-        RhythmGroundGapGenerator.ApplyToSegment(gameObject);
+        if (SceneManager.GetActiveScene().name != "Tutorial")
+        {
+            RhythmGroundGapGenerator.ApplyToSegment(gameObject);
+        }
         CreateInitialNextSegmentIfNeeded();
         if (spawnBarriersOnStart)
         {
@@ -108,12 +111,64 @@ public class BackgroundTranform : MonoBehaviour {
         }
 
         DisableStaticBarrierChildren(segment);
-        RhythmGroundGapGenerator.ApplyToSegment(segment);
+        if (SceneManager.GetActiveScene().name != "Tutorial")
+        {
+            RhythmGroundGapGenerator.ApplyToSegment(segment);
+        }
 
         if (ShouldSpawnEnemiesOnNewSegment())
         {
             TrySpawnEnemiesOnSegment(segment);
         }
+    }
+
+    public static void EnsureForwardSegmentExists()
+    {
+        BackgroundTranform[] backgrounds = FindObjectsOfType<BackgroundTranform>(true);
+        if (backgrounds == null || backgrounds.Length == 0)
+        {
+            return;
+        }
+
+        BackgroundTranform source = null;
+        float rightMostX = float.MinValue;
+        float spawnX = 20f;
+
+        for (int i = 0; i < backgrounds.Length; i++)
+        {
+            if (backgrounds[i] == null)
+            {
+                continue;
+            }
+
+            float x = backgrounds[i].transform.position.x;
+            if (x > rightMostX)
+            {
+                rightMostX = x;
+                source = backgrounds[i];
+                spawnX = backgrounds[i].nextSegmentSpawnX;
+            }
+        }
+
+        if (source == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < backgrounds.Length; i++)
+        {
+            if (backgrounds[i] == null)
+            {
+                continue;
+            }
+
+            if (Mathf.Abs(backgrounds[i].transform.position.x - spawnX) <= 2f)
+            {
+                return;
+            }
+        }
+
+        source.CreateBackground();
     }
 
     private void CreateInitialNextSegmentIfNeeded()
@@ -197,6 +252,12 @@ public class BackgroundTranform : MonoBehaviour {
             if (IsStaticBarrierObject(child.gameObject))
             {
                 child.gameObject.SetActive(false);
+                continue;
+            }
+
+            if (SceneManager.GetActiveScene().name == "Tutorial" && IsStaticTutorialGameplayObject(child.gameObject))
+            {
+                child.gameObject.SetActive(false);
             }
         }
     }
@@ -223,5 +284,29 @@ public class BackgroundTranform : MonoBehaviour {
             || objectName.StartsWith("Barrier1")
             || objectName.StartsWith("Barrier4")
             || objectName.StartsWith("CubeBarrier");
+    }
+
+    private bool IsStaticTutorialGameplayObject(GameObject obj)
+    {
+        if (obj == null)
+        {
+            return false;
+        }
+
+        if (obj.GetComponentInParent<TutorialSpawnedObject>() != null)
+        {
+            return false;
+        }
+
+        if (obj.CompareTag("Bonus1") || obj.CompareTag("Bonus2") || obj.CompareTag("jiasu") || obj.CompareTag("xt") || obj.CompareTag("UpCollider"))
+        {
+            return true;
+        }
+
+        string objectName = obj.name;
+        return objectName.StartsWith("Bonus")
+            || objectName.StartsWith("Gold")
+            || objectName.StartsWith("jetpack")
+            || objectName.StartsWith("carrot_gold");
     }
 }

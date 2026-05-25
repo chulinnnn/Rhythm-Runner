@@ -17,4 +17,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Tutorial.unity
     guid: eeb7e503855b56e4dab886859bba0137
+  - enabled: 1
+    path: Assets/Scenes/OceanRhythm.unity
+    guid: bd9e57d60ac1469a9fa65d04875e0c39
   m_configObjects: {}

@@ -20,6 +20,8 @@ public class RhythmManager : MonoBehaviour
     public string fallbackMusicObjectName = "126bpm";
     public float bpm = 126f;
     public float firstBeatOffset = 0f;
+    public bool useLevelTimeWhenMusicMissing = false;
+    public float levelTimeFallbackStart = 0f;
 
     [Header("Timing windows")]
     public float perfectWindow = 0.08f;
@@ -133,7 +135,7 @@ public class RhythmManager : MonoBehaviour
 
     public RhythmTimingResult JudgeInput()
     {
-        if (musicSource == null || !musicSource.isPlaying)
+        if ((musicSource == null || !musicSource.isPlaying) && !useLevelTimeWhenMusicMissing)
         {
             return RhythmTimingResult.None;
         }
@@ -199,7 +201,12 @@ public class RhythmManager : MonoBehaviour
     {
         if (musicSource == null)
         {
-            return 0f;
+            return useLevelTimeWhenMusicMissing ? Time.timeSinceLevelLoad - levelTimeFallbackStart - firstBeatOffset : 0f;
+        }
+
+        if (!musicSource.isPlaying && useLevelTimeWhenMusicMissing)
+        {
+            return Time.timeSinceLevelLoad - levelTimeFallbackStart - firstBeatOffset;
         }
 
         return musicSource.time - firstBeatOffset;

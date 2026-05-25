@@ -255,19 +255,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 42af777302886d746a1e26144150c587, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  requiredStreak: 8
   targetSceneName: Game
   introDuration: 1.4
+  stepIntroDuration: 1.15
   countdownStepDuration: 0.7
   successDelay: 0.6
   tutorialBpm: 126
   beatsBetweenObstacles: 2
   beatObstacleCount: 16
   firstObstacleBeat: 6
+  playerMeetX: -4.5
+  backgroundMoveSpeed: 8
   backgroundPrefab: {fileID: 116968, guid: 12cf4cdf3cccecb40b88d390208437f8, type: 3}
   uiController: {fileID: 1326032105}
   rhythmManager: {fileID: 0}
   gameManager: {fileID: 0}
+  beatSpawner: {fileID: 0}
 --- !u!4 &51322547
 Transform:
   m_ObjectHideFlags: 0
@@ -1166,7 +1169,7 @@ Transform:
   m_GameObject: {fileID: 380237934}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: -0.46, y: 0.55, z: 0}
   m_LocalScale: {x: 4, y: 4, z: 2.4979205}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1529,7 +1532,7 @@ Transform:
   m_GameObject: {fileID: 457254890}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.94, y: -0.06, z: 0}
+  m_LocalPosition: {x: -1.89, y: 0.51, z: 0}
   m_LocalScale: {x: 2, y: 2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2293,15 +2296,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3d0f1227e16b50488b04364bb452008, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  backgroundArt: {fileID: 0}
   coachImage: {fileID: 0}
   jumpIcon: {fileID: 0}
-  beatIcon: {fileID: 0}
-  successImage: {fileID: 0}
+  beatIcon: {fileID: 21300000, guid: 78d3d1ebedc6a0b419354aeddc093a8c, type: 3}
+  successImage: {fileID: 21300000, guid: d84dbface836a644fa005c478396e25a, type: 3}
+  failureImage: {fileID: 21300000, guid: 139e6e53e8081cb4a95ee273df9e556e, type: 3}
+  backdropColor: {r: 0.02, g: 0.03, b: 0.04, a: 0.28}
   panelColor: {r: 0.04, g: 0.06, b: 0.08, a: 0.78}
+  softPanelColor: {r: 0.09, g: 0.12, b: 0.15, a: 0.78}
   accentColor: {r: 1, g: 0.78, b: 0.18, a: 1}
   goodColor: {r: 0.18, g: 0.86, b: 1, a: 1}
+  successColor: {r: 0.36, g: 0.92, b: 0.52, a: 1}
   missColor: {r: 1, g: 0.22, b: 0.18, a: 1}
   textColor: {r: 1, g: 1, b: 1, a: 1}
+  titleIntro: Warm Up
+  titlePractice: Tutorial
+  introPrimary: Jump on the yellow pulse
+  introSecondary: Press SPACE or UP ARROW when the ring flashes.
+  practicePrimary: Match the beat
+  practiceSecondary: Keep jumping every 2 beats.
+  successTitle: Ready!
+  successSubtitle: Entering the run...
+  failureTitle: Try Again
+  failureSubtitle: Missed the rhythm. Restart the warm up.
 --- !u!4 &1326032106
 Transform:
   m_ObjectHideFlags: 0
@@ -2445,6 +2463,13 @@ MonoBehaviour:
   beatsBetweenObstacles: 2
   firstObstacleBeat: 6
   playerMeetX: -4.5
+  spawnGapsOnBeat: 0
+  firstGapBeat: 12
+  beatsBetweenGaps: 8
+  gapDurationBeats: 0.4
+  minGapWorldWidth: 1.15
+  maxGapWorldWidth: 1.65
+  generatedGroundColor: {r: 0.55, g: 0.36, b: 0.16, a: 1}
 --- !u!4 &1416740976
 Transform:
   m_ObjectHideFlags: 0
@@ -3093,6 +3118,8 @@ MonoBehaviour:
   fallbackMusicObjectName: 126bpm
   bpm: 126
   firstBeatOffset: 0
+  useLevelTimeWhenMusicMissing: 0
+  levelTimeFallbackStart: 0
   perfectWindow: 0.08
   goodWindow: 0.15
   feedbackText: {fileID: 0}

@@ -25,8 +25,8 @@ public class TutorialUIController : MonoBehaviour
     [Header("Copy")]
     public string titleIntro = "Warm Up";
     public string titlePractice = "Tutorial";
-    public string introPrimary = "Jump on the yellow pulse";
-    public string introSecondary = "Press SPACE or UP ARROW when the ring flashes.";
+    public string introPrimary = "Move on the beat";
+    public string introSecondary = "Press SPACE or UP ARROW when the bottom lane turns gold.";
     public string practicePrimary = "Match the beat";
     public string practiceSecondary = "Keep jumping every 2 beats.";
     public string successTitle = "Ready!";
@@ -72,12 +72,16 @@ public class TutorialUIController : MonoBehaviour
     private Image beatIconView;
     private Image successImageView;
     private Image failureImageView;
-    private Image beatRingBack;
-    private Image beatRingFill;
-    private Image beatCore;
+    private Image beatBlueBlock;
+    private Image beatYellowBlock;
+    private Image beatFlashBlock;
     private Image keyCapImage;
     private Image progressFill;
     private Image[] progressPips;
+    private RectTransform targetArrowRect;
+    private Image targetArrowImage;
+    private Text targetArrowText;
+    private Transform targetArrowTarget;
 
     private int requiredHits = 8;
     private int currentStreak;
@@ -87,7 +91,9 @@ public class TutorialUIController : MonoBehaviour
     private float resultFlashTimer;
     private float missFlashTimer;
     private bool practiceVisible;
+    private bool beatLaneActive;
     private RhythmManager rhythmManager;
+    private string activeInputHint = "JUMP";
 
     private Font UiFont
     {
@@ -146,6 +152,7 @@ public class TutorialUIController : MonoBehaviour
         CreateCoachCard(mainRoot.transform);
         CreateBeatGuide(mainRoot.transform);
         CreateActionCard(mainRoot.transform);
+        CreateTargetArrow(mainRoot.transform);
         CreateProgressBar(mainRoot.transform);
         CreateOverlayPanels(canvasObject.transform);
 
@@ -158,6 +165,7 @@ public class TutorialUIController : MonoBehaviour
     {
         EnsureUi();
         practiceVisible = false;
+        beatLaneActive = false;
         currentStreak = 0;
         SetMainVisible(true);
         SetOverlayVisible(failOverlay, false);
@@ -167,7 +175,7 @@ public class TutorialUIController : MonoBehaviour
         objectiveText.text = "Goal  " + requiredHits + " beat hits in a row";
         coachSpeechText.text = introPrimary + "\n" + introSecondary;
         actionTitleText.text = "Your move";
-        actionBodyText.text = "Watch the ring. Jump when it turns bright.";
+        actionBodyText.text = "Watch the bottom lane. Press when it turns gold.";
         beatPromptText.text = "Get ready";
         countdownText.text = "";
         resultText.text = "";
@@ -179,16 +187,19 @@ public class TutorialUIController : MonoBehaviour
     {
         EnsureUi();
         practiceVisible = false;
+        beatLaneActive = false;
         countdownText.text = value;
-        beatPromptText.text = value == "Go" ? "Jump on beat" : "Starting";
+        beatPromptText.text = value == "Go" ? activeInputHint : "Starting";
         resultText.text = "";
         keyCapImage.color = value == "Go" ? accentColor : softPanelColor;
+        SetBeatLaneIdle();
     }
 
     public void ShowPractice(int streak, int required)
     {
         EnsureUi();
         practiceVisible = true;
+        beatLaneActive = true;
         currentStreak = streak;
         requiredHits = Mathf.Max(1, required);
 
@@ -202,6 +213,95 @@ public class TutorialUIController : MonoBehaviour
         resultText.color = new Color(1f, 1f, 1f, 0.76f);
         keyText.text = "SPACE";
         SetProgress(streak, required);
+    }
+
+    public void ShowStepIntro(string title, string instruction, string inputHint, int progress, int required)
+    {
+        EnsureUi();
+        practiceVisible = false;
+        beatLaneActive = false;
+        activeInputHint = inputHint;
+        currentStreak = Mathf.Max(0, progress);
+        requiredHits = Mathf.Max(1, required);
+
+        SetMainVisible(true);
+        SetOverlayVisible(failOverlay, false);
+        SetOverlayVisible(successOverlay, false);
+
+        topTitleText.text = title;
+        objectiveText.text = "Lesson  " + currentStreak + " / " + requiredHits;
+        coachSpeechText.text = instruction;
+        actionTitleText.text = inputHint;
+        actionBodyText.text = GetActionBody(inputHint);
+        keyText.text = GetKeyLabel(inputHint);
+        beatPromptText.text = "watch the lane";
+        countdownText.text = "";
+        resultText.text = "";
+        keyCapImage.color = softPanelColor;
+        SetBeatLaneIdle();
+        SetProgress(currentStreak, requiredHits);
+        ShowTargetArrow(null, inputHint);
+    }
+
+    public void ShowBeatLane(string inputHint, float timeToBeat, bool inWindow)
+    {
+        EnsureUi();
+        activeInputHint = inputHint;
+        beatLaneActive = true;
+
+        float leadTime = Mathf.Clamp(timeToBeat, -0.28f, 1.25f);
+        float progress = leadTime >= 0f ? 1f - Mathf.Clamp01(leadTime / 1.25f) : 1f - Mathf.Clamp01(Mathf.Abs(leadTime) / 0.28f);
+        ApplyBeatFlash(progress, inWindow);
+        keyCapImage.color = inWindow ? accentColor : softPanelColor;
+        keyText.text = GetKeyLabel(inputHint);
+        actionTitleText.text = inputHint;
+        actionBodyText.text = GetActionBody(inputHint);
+        beatPromptText.text = inWindow ? inputHint : FormatBeatCountdown(timeToBeat);
+    }
+
+    public void ShowTargetArrow(Transform target, string inputHint)
+    {
+        EnsureUi();
+        activeInputHint = inputHint;
+        targetArrowTarget = target;
+        if (targetArrowRect != null)
+        {
+            targetArrowRect.gameObject.SetActive(target != null);
+        }
+
+        if (targetArrowText != null)
+        {
+            targetArrowText.text = inputHint;
+        }
+    }
+
+    public void ShowStepProgress(string title, int progress, int required)
+    {
+        EnsureUi();
+        currentStreak = Mathf.Max(0, progress);
+        requiredHits = Mathf.Max(1, required);
+        topTitleText.text = title;
+        objectiveText.text = "Lesson progress  " + currentStreak + " / " + requiredHits;
+        SetProgress(currentStreak, requiredHits);
+    }
+
+    public void ShowFailureHint(string label, string hint, int failureCount)
+    {
+        EnsureUi();
+        practiceVisible = true;
+        currentStreak = 0;
+        ShowResult(label, missColor, hint);
+        resultText.text = label;
+        objectiveText.text = "Try again  misses " + failureCount;
+        missFlashTimer = 0.28f;
+        SetProgress(0, requiredHits);
+    }
+
+    public void ShowStatusHint(string label, string hint, Color color)
+    {
+        EnsureUi();
+        practiceVisible = true;
+        ShowResult(label, color, hint);
     }
 
     public void ShowInputResult(RhythmTimingResult result, int streak, int required)
@@ -235,6 +335,7 @@ public class TutorialUIController : MonoBehaviour
     {
         EnsureUi();
         practiceVisible = false;
+        beatLaneActive = false;
         SetMainVisible(false);
         SetOverlayVisible(failOverlay, false);
         SetOverlayVisible(successOverlay, true);
@@ -248,6 +349,7 @@ public class TutorialUIController : MonoBehaviour
     {
         EnsureUi();
         practiceVisible = false;
+        beatLaneActive = false;
         SetMainVisible(false);
         SetOverlayVisible(successOverlay, false);
         SetOverlayVisible(failOverlay, true);
@@ -260,6 +362,7 @@ public class TutorialUIController : MonoBehaviour
         AnimateResult();
         AnimateBeatGuide();
         AnimateMissFlash();
+        UpdateTargetArrow();
     }
 
     private void ShowResult(string label, Color color, string coachLine)
@@ -294,7 +397,12 @@ public class TutorialUIController : MonoBehaviour
 
     private void AnimateBeatGuide()
     {
-        if (beatRingFill == null || beatRingBack == null || beatCore == null)
+        if (!beatLaneActive || beatBlueBlock == null || beatYellowBlock == null || beatFlashBlock == null)
+        {
+            return;
+        }
+
+        if (practiceVisible)
         {
             return;
         }
@@ -308,20 +416,75 @@ public class TutorialUIController : MonoBehaviour
         float progress = 1f - Mathf.Clamp01(timeToCue / Mathf.Max(0.001f, cueWindow));
         bool ready = timeToCue <= BeatReadyWindow && timeToCue >= -BeatReadyWindow;
 
-        beatRingFill.fillAmount = progress;
-        beatRingFill.color = ready ? accentColor : goodColor;
-        beatCore.color = ready ? accentColor : new Color(1f, 1f, 1f, 0.22f);
-        beatPromptText.text = ready ? "JUMP" : "wait";
+        ApplyBeatFlash(progress, ready);
+        beatPromptText.text = ready ? activeInputHint : "wait";
         keyCapImage.color = ready ? accentColor : softPanelColor;
-
-        float pulse = ready ? 1.16f + Mathf.Sin(Time.unscaledTime * 26f) * 0.04f : 1f + progress * 0.08f;
-        beatRingBack.transform.localScale = Vector3.one * pulse;
-        beatRingFill.transform.localScale = Vector3.one * pulse;
-        beatCore.transform.localScale = Vector3.one * (ready ? 1.08f : 1f);
 
         if (!practiceVisible && countdownText != null && !string.IsNullOrEmpty(countdownText.text))
         {
-            beatPromptText.text = countdownText.text == "Go" ? "JUMP" : "ready";
+            beatPromptText.text = countdownText.text == "Go" ? activeInputHint : "ready";
+        }
+    }
+
+    private void ApplyBeatFlash(float progress, bool ready)
+    {
+        if (beatBlueBlock == null || beatYellowBlock == null || beatFlashBlock == null)
+        {
+            return;
+        }
+
+        float clampedProgress = Mathf.Clamp01(progress);
+        bool yellowPhase = ready || clampedProgress >= 0.5f;
+        Color activeColor = yellowPhase ? accentColor : goodColor;
+        Color inactiveBlue = new Color(goodColor.r, goodColor.g, goodColor.b, 0.28f);
+        Color inactiveYellow = new Color(accentColor.r, accentColor.g, accentColor.b, 0.28f);
+
+        beatBlueBlock.color = yellowPhase ? inactiveBlue : new Color(goodColor.r, goodColor.g, goodColor.b, 0.95f);
+        beatYellowBlock.color = yellowPhase ? new Color(accentColor.r, accentColor.g, accentColor.b, ready ? 1f : 0.8f) : inactiveYellow;
+        beatFlashBlock.color = new Color(activeColor.r, activeColor.g, activeColor.b, ready ? 0.42f : 0.16f + clampedProgress * 0.14f);
+
+        float blueScale = yellowPhase ? 0.94f : 1.08f;
+        float yellowScale = yellowPhase ? (ready ? 1.16f : 1.08f) : 0.94f;
+        beatBlueBlock.transform.localScale = Vector3.one * blueScale;
+        beatYellowBlock.transform.localScale = Vector3.one * yellowScale;
+        beatFlashBlock.transform.localScale = new Vector3(0.92f + clampedProgress * 0.14f, ready ? 1.08f : 1f, 1f);
+        beatIconView.color = ready ? accentColor : activeColor;
+    }
+
+    private void SetBeatLaneIdle()
+    {
+        if (beatBlueBlock == null || beatYellowBlock == null || beatFlashBlock == null)
+        {
+            return;
+        }
+
+        beatBlueBlock.color = new Color(goodColor.r, goodColor.g, goodColor.b, 0.24f);
+        beatYellowBlock.color = new Color(accentColor.r, accentColor.g, accentColor.b, 0.24f);
+        beatFlashBlock.color = new Color(1f, 1f, 1f, 0.06f);
+        beatBlueBlock.transform.localScale = Vector3.one;
+        beatYellowBlock.transform.localScale = Vector3.one;
+        beatFlashBlock.transform.localScale = Vector3.one;
+        if (beatIconView != null)
+        {
+            beatIconView.color = softPanelColor;
+        }
+    }
+
+    private void UpdateTargetArrow()
+    {
+        if (targetArrowRect == null || targetArrowTarget == null || Camera.main == null)
+        {
+            return;
+        }
+
+        Vector3 screenPoint = Camera.main.WorldToScreenPoint(targetArrowTarget.position + new Vector3(0f, 1.15f, 0f));
+        bool visible = screenPoint.z > 0f && screenPoint.x > -80f && screenPoint.x < Screen.width + 80f;
+        targetArrowRect.gameObject.SetActive(visible);
+        targetArrowRect.position = screenPoint;
+
+        if (targetArrowImage != null)
+        {
+            targetArrowImage.color = Color.Lerp(panelColor, accentColor, 0.22f + Mathf.PingPong(Time.unscaledTime * 2.4f, 0.18f));
         }
     }
 
@@ -373,7 +536,7 @@ public class TutorialUIController : MonoBehaviour
         bpmText = CreateText(panel.transform, "Bpm", new Vector2(0.92f, 0.58f), Vector2.zero, new Vector2(150f, 30f), 20, FontStyle.Bold, TextAnchor.MiddleRight);
 
         Text hint = CreateText(panel.transform, "Hint", new Vector2(0.5f, 0.18f), Vector2.zero, new Vector2(860f, 22f), 16, FontStyle.Normal, TextAnchor.MiddleCenter);
-        hint.text = "Watch the ring, press once, then land back into the rhythm.";
+        hint.text = "Watch the bottom lane, press once, then land back into the rhythm.";
         hint.color = new Color(1f, 1f, 1f, 0.66f);
     }
 
@@ -393,31 +556,27 @@ public class TutorialUIController : MonoBehaviour
 
     private void CreateBeatGuide(Transform parent)
     {
-        GameObject panel = CreatePanel(parent, "TutorialBeatGuide", new Vector2(0.5f, 0.54f), new Vector2(0f, 14f), new Vector2(330f, 330f), new Color(0.02f, 0.03f, 0.04f, 0.52f));
+        GameObject panel = CreatePanel(parent, "TutorialBeatLane", new Vector2(0.5f, 0f), new Vector2(0f, 168f), new Vector2(460f, 132f), new Color(0.02f, 0.03f, 0.04f, 0.72f));
 
-        beatRingBack = CreateImage(panel.transform, "BeatRingBack", new Vector2(0.5f, 0.55f), Vector2.zero, new Vector2(206f, 206f), new Color(1f, 1f, 1f, 0.16f));
-        beatRingBack.sprite = CreateRingSprite();
-        beatRingFill = CreateImage(panel.transform, "BeatRingFill", new Vector2(0.5f, 0.55f), Vector2.zero, new Vector2(206f, 206f), goodColor);
-        beatRingFill.sprite = CreateRingSprite();
-        beatRingFill.type = Image.Type.Filled;
-        beatRingFill.fillMethod = Image.FillMethod.Radial360;
-        beatRingFill.fillOrigin = 2;
-        beatRingFill.fillClockwise = true;
-        beatRingFill.fillAmount = 0f;
+        beatBlueBlock = CreateImage(panel.transform, "BeatBlueBlock", new Vector2(0.22f, 0.5f), new Vector2(-46f, 0f), new Vector2(88f, 74f), goodColor);
+        beatBlueBlock.color = new Color(goodColor.r, goodColor.g, goodColor.b, 0.88f);
 
-        beatCore = CreateImage(panel.transform, "BeatCore", new Vector2(0.5f, 0.55f), Vector2.zero, new Vector2(92f, 92f), new Color(1f, 1f, 1f, 0.2f));
-        beatCore.sprite = CreateCircleSprite();
+        beatYellowBlock = CreateImage(panel.transform, "BeatYellowBlock", new Vector2(0.22f, 0.5f), new Vector2(46f, 0f), new Vector2(88f, 74f), accentColor);
+        beatYellowBlock.color = new Color(accentColor.r, accentColor.g, accentColor.b, 0.28f);
 
-        beatIconView = CreateImage(panel.transform, "BeatIcon", new Vector2(0.5f, 0.55f), Vector2.zero, new Vector2(54f, 54f), accentColor);
-        beatPlaceholderText = CreateText(beatIconView.transform, "BeatPlaceholder", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(70f, 32f), 20, FontStyle.Bold, TextAnchor.MiddleCenter);
+        beatFlashBlock = CreateImage(panel.transform, "BeatFlashBlock", new Vector2(0.22f, 0.5f), Vector2.zero, new Vector2(190f, 86f), goodColor);
+        beatFlashBlock.color = new Color(goodColor.r, goodColor.g, goodColor.b, 0.12f);
+
+        beatIconView = CreateImage(panel.transform, "BeatIcon", new Vector2(0.22f, 0.5f), Vector2.zero, new Vector2(58f, 44f), accentColor);
+        beatPlaceholderText = CreateText(beatIconView.transform, "BeatPlaceholder", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(70f, 32f), 18, FontStyle.Bold, TextAnchor.MiddleCenter);
         beatPlaceholderText.text = "BEAT";
         beatPlaceholderText.color = new Color(0f, 0f, 0f, 0.58f);
 
-        beatPromptText = CreateText(panel.transform, "BeatPrompt", new Vector2(0.5f, 0.17f), Vector2.zero, new Vector2(260f, 46f), 34, FontStyle.Bold, TextAnchor.MiddleCenter);
+        beatPromptText = CreateText(panel.transform, "BeatPrompt", new Vector2(0.66f, 0.58f), Vector2.zero, new Vector2(250f, 46f), 34, FontStyle.Bold, TextAnchor.MiddleCenter);
         beatPromptText.color = accentColor;
-        countdownText = CreateText(panel.transform, "Countdown", new Vector2(0.5f, 0.55f), Vector2.zero, new Vector2(210f, 92f), 70, FontStyle.Bold, TextAnchor.MiddleCenter);
+        countdownText = CreateText(panel.transform, "Countdown", new Vector2(0.22f, 0.5f), Vector2.zero, new Vector2(96f, 74f), 48, FontStyle.Bold, TextAnchor.MiddleCenter);
         countdownText.color = Color.white;
-        resultText = CreateText(panel.transform, "Result", new Vector2(0.5f, 0.03f), Vector2.zero, new Vector2(260f, 34f), 22, FontStyle.Bold, TextAnchor.MiddleCenter);
+        resultText = CreateText(panel.transform, "Result", new Vector2(0.66f, 0.25f), Vector2.zero, new Vector2(260f, 34f), 22, FontStyle.Bold, TextAnchor.MiddleCenter);
     }
 
     private void CreateActionCard(Transform parent)
@@ -455,6 +614,19 @@ public class TutorialUIController : MonoBehaviour
             pip.sprite = CreateCircleSprite();
             progressPips[i] = pip;
         }
+    }
+
+    private void CreateTargetArrow(Transform parent)
+    {
+        GameObject obj = CreatePanel(parent, "TutorialTargetArrow", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(96f, 54f), new Color(0.02f, 0.03f, 0.04f, 0.82f));
+        targetArrowRect = obj.GetComponent<RectTransform>();
+        targetArrowImage = obj.GetComponent<Image>();
+        targetArrowText = CreateText(obj.transform, "TargetArrowText", new Vector2(0.5f, 0.56f), Vector2.zero, new Vector2(90f, 34f), 18, FontStyle.Bold, TextAnchor.MiddleCenter);
+        targetArrowText.color = accentColor;
+
+        Image pointer = CreateImage(obj.transform, "Pointer", new Vector2(0.5f, -0.12f), Vector2.zero, new Vector2(20f, 20f), accentColor);
+        pointer.sprite = CreateCircleSprite();
+        obj.SetActive(false);
     }
 
     private void CreateOverlayPanels(Transform parent)
@@ -537,6 +709,81 @@ public class TutorialUIController : MonoBehaviour
         {
             placeholder.enabled = sprite == null;
         }
+    }
+
+    private string FormatBeatCountdown(float timeToBeat)
+    {
+        if (timeToBeat < -0.28f)
+        {
+            return "next";
+        }
+
+        if (timeToBeat < 0f)
+        {
+            return "hit";
+        }
+
+        return timeToBeat.ToString("0.00") + "s";
+    }
+
+    private string GetActionBody(string inputHint)
+    {
+        if (inputHint == "DOWN" || inputHint == "SLIDE")
+        {
+            return "Press Down exactly on the highlighted beat.";
+        }
+
+        if (inputHint == "COIN")
+        {
+            return "Use the flash to line up, then collect the coin.";
+        }
+
+        if (inputHint == "BOOST" || inputHint == "BOOST ITEM")
+        {
+            return "Reach the rhythm path and collect the Boost.";
+        }
+
+        if (inputHint == "MAGNET" || inputHint == "MAGNET ITEM")
+        {
+            return "Reach the rhythm path and collect the Magnet.";
+        }
+
+        if (inputHint == "MIX")
+        {
+            return "Clear obstacles and collect items. The beat is a guide.";
+        }
+
+        return "Press once when the beat lane turns gold.";
+    }
+
+    private string GetKeyLabel(string inputHint)
+    {
+        if (inputHint == "DOWN" || inputHint == "SLIDE")
+        {
+            return "DOWN";
+        }
+
+        if (inputHint == "COIN")
+        {
+            return "BEAT";
+        }
+
+        if (inputHint == "BOOST" || inputHint == "BOOST ITEM")
+        {
+            return "BOOST";
+        }
+
+        if (inputHint == "MAGNET" || inputHint == "MAGNET ITEM")
+        {
+            return "MAGNET";
+        }
+
+        if (inputHint == "MIX")
+        {
+            return "READ";
+        }
+
+        return "SPACE";
     }
 
     private void RefreshStaticText()
@@ -635,28 +882,6 @@ public class TutorialUIController : MonoBehaviour
         {
             overlay.SetActive(visible);
         }
-    }
-
-    private Sprite CreateRingSprite()
-    {
-        const int size = 128;
-        const float outerRadius = 58f;
-        const float innerRadius = 43f;
-        Texture2D texture = new Texture2D(size, size);
-        Color clear = new Color(1f, 1f, 1f, 0f);
-        Vector2 center = new Vector2((size - 1) * 0.5f, (size - 1) * 0.5f);
-
-        for (int y = 0; y < size; y++)
-        {
-            for (int x = 0; x < size; x++)
-            {
-                float distance = Vector2.Distance(new Vector2(x, y), center);
-                texture.SetPixel(x, y, distance <= outerRadius && distance >= innerRadius ? Color.white : clear);
-            }
-        }
-
-        texture.Apply();
-        return Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
     }
 
     private Sprite CreateCircleSprite()

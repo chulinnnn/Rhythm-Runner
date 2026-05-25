@@ -1,7 +1,12 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.SceneManagement;
 
 public class PlayerController : MonoBehaviour {
+
+    public event System.Action<string, RhythmTimingResult> RhythmInputReported;
+    public event System.Action JellyBounceUsed;
+    public event System.Action<string, bool> RhythmCollectibleCollected;
 
     private Animator animator;
     private Rigidbody2D rigidbody;
@@ -21,6 +26,8 @@ public class PlayerController : MonoBehaviour {
 
     private bool isMagnetActive = false;
     private Coroutine magnetCoroutine;
+    private RhythmTimingResult lastRhythmResult = RhythmTimingResult.None;
+    private float lastRhythmInputTime = -10f;
 
     private const float MagnetDuration = 10f;
     private const float MagnetRadius = 20f;
@@ -35,8 +42,23 @@ public class PlayerController : MonoBehaviour {
     private const float JiasuTargetX = -4.5f;
     private const float DefaultJumpForce = 5f;
 
+    private bool IsTutorialScene
+    {
+        get { return SceneManager.GetActiveScene().name == "Tutorial"; }
+    }
+
 	// Use this for initialization
 	void Start () {
+        EnsureComponents();
+	}
+
+    private void EnsureComponents()
+    {
+        if (animator != null && rigidbody != null && boxCollider != null && boxSize != Vector2.zero)
+        {
+            return;
+        }
+
         animator = GetComponent<Animator>();
         rigidbody = GetComponent<Rigidbody2D>();
         boxCollider = GetComponent<BoxCollider2D>();
@@ -47,8 +69,11 @@ public class PlayerController : MonoBehaviour {
             jumpForce = DefaultJumpForce;
         }
 
-        boxSize = boxCollider.size;
-	}
+        if (boxCollider != null)
+        {
+            boxSize = boxCollider.size;
+        }
+    }
 	
 	// Update is called once per frame
 	void Update () {
@@ -91,7 +116,7 @@ public class PlayerController : MonoBehaviour {
 
         if (transform.position.x <= -6.5f)
         {
-            GameManager.Instance.GameOver();
+            TriggerGameOver();
         }
         else
         {
@@ -99,7 +124,7 @@ public class PlayerController : MonoBehaviour {
         }
         if (transform.position.y <= -6.5f)
         {
-            GameManager.Instance.GameOver();
+            TriggerGameOver();
         }
     }
 
@@ -125,7 +150,14 @@ public class PlayerController : MonoBehaviour {
             return RhythmTimingResult.None;
         }
 
-        return RhythmManager.Instance.ReportInput(actionName);
+        RhythmTimingResult result = RhythmManager.Instance.ReportInput(actionName);
+        lastRhythmResult = result;
+        lastRhythmInputTime = Time.time;
+        if (RhythmInputReported != null)
+        {
+            RhythmInputReported(actionName, result);
+        }
+        return result;
     }
 
     private float GetRhythmJumpForce(RhythmTimingResult timing)
@@ -180,25 +212,44 @@ public class PlayerController : MonoBehaviour {
 
         if (coll.gameObject.tag == "UpCollider")
         {
+            if (IsTutorialScene)
+            {
+                return;
+            }
+
             canJump = true;
             rigidbody.velocity = Vector2.up * jumpForce;
             animator.SetBool("Jump", true);
             animator.SetBool("DoubleJump",true);
+            if (JellyBounceUsed != null)
+            {
+                JellyBounceUsed();
+            }
             GameObject.Destroy(coll.transform.parent.gameObject);
         }
 
         if (coll.gameObject.tag == "EnemyBarrier")
         {
-            GameManager.Instance.GameOver();
+            TriggerGameOver();
         }
 
         if (coll.gameObject.tag == "jiasu")
         {
+            if (IsTutorialScene)
+            {
+                return;
+            }
+
             PickUpJiasu(coll.gameObject);
         }
 
         if (coll.gameObject.tag == "xt")
         {
+            if (IsTutorialScene)
+            {
+                return;
+            }
+
             PickUpXt(coll.gameObject);
         }
 
@@ -210,16 +261,29 @@ public class PlayerController : MonoBehaviour {
 
     private void OnTriggerEnter2D(Collider2D coll)
     {
+        if (IsTutorialScene && IsLegacyTutorialItemTag(coll.gameObject.tag))
+        {
+            return;
+        }
+
         if (coll.gameObject.tag == "Bonus1")
         {
             SoundManager.PlaySFX("jinbi");
-            GameManager.Instance.UpdateBonus(1);
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.UpdateBonus(1);
+            }
+            ReportRhythmCollectible(coll.gameObject.tag);
             Destroy(coll.gameObject);
         }
         if (coll.gameObject.tag == "Bonus2")
         {
-            GameManager.Instance.UpdateBonus(5);
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.UpdateBonus(5);
+            }
             //gameManager.UpdateBonus(5);
+            ReportRhythmCollectible(coll.gameObject.tag);
             Destroy(coll.gameObject);
         }
         if (coll.gameObject.tag == "jiasu")
@@ -229,6 +293,90 @@ public class PlayerController : MonoBehaviour {
         if (coll.gameObject.tag == "xt")
         {
             PickUpXt(coll.gameObject);
+        }
+    }
+
+    private void ReportRhythmCollectible(string collectibleTag)
+    {
+        bool wasOnBeat = IsRecentRhythmSuccess();
+        if (RhythmCollectibleCollected != null)
+        {
+            RhythmCollectibleCollected(collectibleTag, wasOnBeat);
+        }
+    }
+
+    private void TriggerGameOver()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.GameOver();
+        }
+    }
+
+    private bool IsLegacyTutorialItemTag(string tagName)
+    {
+        return tagName == "Bonus1"
+            || tagName == "Bonus2"
+            || tagName == "jiasu"
+            || tagName == "xt"
+            || tagName == "UpCollider";
+    }
+
+    private bool IsRecentRhythmSuccess()
+    {
+        bool success = lastRhythmResult == RhythmTimingResult.Perfect || lastRhythmResult == RhythmTimingResult.Good;
+        return success && Time.time - lastRhythmInputTime <= 0.4f;
+    }
+
+    public void ResetForTutorial(Vector3 startPosition)
+    {
+        EnsureComponents();
+
+        if (jiasuCoroutine != null)
+        {
+            StopCoroutine(jiasuCoroutine);
+            jiasuCoroutine = null;
+        }
+
+        if (magnetCoroutine != null)
+        {
+            StopCoroutine(magnetCoroutine);
+            magnetCoroutine = null;
+        }
+
+        isJiasuMode = false;
+        isMagnetActive = false;
+        canJump = true;
+        IsGround = true;
+        lastRhythmResult = RhythmTimingResult.None;
+        lastRhythmInputTime = -10f;
+
+        if (rigidbody != null)
+        {
+            rigidbody.gravityScale = savedGravityScale > 0f ? savedGravityScale : rigidbody.gravityScale;
+            rigidbody.velocity = Vector2.zero;
+            rigidbody.angularVelocity = 0f;
+        }
+
+        if (boxCollider != null)
+        {
+            boxCollider.isTrigger = savedColliderTrigger;
+            boxCollider.size = boxSize;
+        }
+
+        if (animator != null)
+        {
+            animator.enabled = true;
+            animator.SetBool("Jump", false);
+            animator.SetBool("DoubleJump", false);
+            animator.SetBool("Slide", false);
+        }
+
+        transform.position = startPosition;
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.speedMultiplier = 1f;
         }
     }
 
@@ -295,14 +443,20 @@ public class PlayerController : MonoBehaviour {
         rigidbody.gravityScale = 0f;
         rigidbody.velocity = Vector2.zero;
         boxCollider.isTrigger = true;
-        GameManager.Instance.speedMultiplier = JiasuSpeedMultiplier;
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.speedMultiplier = JiasuSpeedMultiplier;
+        }
 
         yield return new WaitForSeconds(JiasuDuration);
 
         isJiasuMode = false;
         rigidbody.gravityScale = savedGravityScale;
         boxCollider.isTrigger = savedColliderTrigger;
-        GameManager.Instance.speedMultiplier = 1f;
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.speedMultiplier = 1f;
+        }
         jiasuCoroutine = null;
     }
 }
