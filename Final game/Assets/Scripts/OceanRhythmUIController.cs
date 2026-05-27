@@ -15,8 +15,12 @@ public class OceanRhythmUIController : MonoBehaviour
     private Text feedbackText;
     private Text progressText;
     private Text lessonCounterText;
+    private Text learningModeText;
+    private Text lessonGoalText;
+    private Text progressHelpText;
     private Image progressFill;
     private Transform beatBubbleRoot;
+    private Transform lessonTargetBubbleRoot;
     private OceanAnimalController animalController;
     private RectTransform guidedAnimalRoot;
     private RectTransform pondLayer;
@@ -27,19 +31,32 @@ public class OceanRhythmUIController : MonoBehaviour
     private GameObject bucketAlbumOverlay;
     private Text bucketCountText;
     private Text bucketShellText;
+    private Text bucketPearlText;
     private Image bucketDecorationImage;
     private Text rewardText;
     private GameObject beatInfoButton;
+    private GameObject singingShellButton;
+    private Text singingShellButtonText;
+    private Image singingShellButtonImage;
+    private GameObject soundMatchOverlay;
+    private Transform soundMatchBubbleRoot;
+    private Text soundMatchTitleText;
+    private Text soundMatchBodyText;
+    private Text soundMatchResultText;
+    private Text soundMatchPearlText;
     private Text bucketHintText;
     private Transform decorationLibraryRoot;
     private readonly List<OceanBucketSlot> bucketSlots = new List<OceanBucketSlot>();
     private readonly List<Image> beatBubbles = new List<Image>();
+    private readonly List<Image> lessonTargetBubbles = new List<Image>();
+    private readonly List<Image> soundMatchBubbles = new List<Image>();
     private readonly List<Image> guideCollectionIcons = new List<Image>();
     private readonly List<OceanPondAnimal> pondAnimals = new List<OceanPondAnimal>();
     private Sprite circleSprite;
     private int keyboardSelectedIndex;
     private float keyboardSelectionHoldUntil;
     private OceanPondAnimal currentFreePondSelection;
+    private bool showingGuidedLesson;
 
     public void Build(OceanRhythmManager owner)
     {
@@ -97,17 +114,22 @@ public class OceanRhythmUIController : MonoBehaviour
         CreateBeatCardOverlay(root.transform);
         CreateBucketUi(root.transform);
         CreateBucketAlbum(root.transform);
+        CreateSingingShellButton(root.transform);
+        CreateSoundMatchOverlay(root.transform);
         CreateRewardToast(root.transform);
         CreateNavigation(root.transform);
         completeOverlay.transform.SetAsLastSibling();
         pondCompleteOverlay.transform.SetAsLastSibling();
         beatCardOverlay.transform.SetAsLastSibling();
         bucketAlbumOverlay.transform.SetAsLastSibling();
+        soundMatchOverlay.transform.SetAsLastSibling();
 
         completeOverlay.SetActive(false);
         pondCompleteOverlay.SetActive(false);
         beatCardOverlay.SetActive(false);
         bucketAlbumOverlay.SetActive(false);
+        soundMatchOverlay.SetActive(false);
+        singingShellButton.SetActive(false);
         beatInfoButton.SetActive(false);
         pondLayer.gameObject.SetActive(false);
     }
@@ -120,15 +142,33 @@ public class OceanRhythmUIController : MonoBehaviour
         }
 
         titleText.text = lesson.animalName;
+        showingGuidedLesson = true;
         subtitleText.text = lesson.meterLabel + "  " + Mathf.RoundToInt(lesson.bpm) + " BPM";
-        instructionText.text = lesson.instruction + "\nTap Space on the bright bubble.";
+        instructionText.text = "Learning Mode: " + lesson.instruction + "\nTap Space on bright bubbles to fill the lesson bubbles.";
         feedbackText.text = "Listen first";
         feedbackText.color = new Color(1f, 0.95f, 0.68f);
-        lessonCounterText.text = lessonNumber + " / " + lessonCount;
+        lessonCounterText.text = "Lesson " + lessonNumber + " / " + lessonCount;
+        if (learningModeText != null)
+        {
+            learningModeText.gameObject.SetActive(true);
+            learningModeText.text = "RHYTHM LESSON";
+        }
+        if (lessonGoalText != null)
+        {
+            lessonGoalText.gameObject.SetActive(true);
+            lessonGoalText.text = "Need " + lesson.requiredHits + " bright-bubble taps";
+        }
+        if (progressHelpText != null)
+        {
+            progressHelpText.gameObject.SetActive(true);
+            progressHelpText.text = "Fill the lesson bubbles";
+        }
         beatInfoButton.SetActive(false);
 
         BuildBeatBubbles(lesson.beatsPerBar);
+        BuildLessonTargetBubbles(lesson.requiredHits);
         SetProgress(currentProgress, lesson.requiredHits);
+        UpdateLessonTargetBubbles(currentProgress, lesson.requiredHits, OceanRhythmHitResult.Near);
 
         if (animalController != null)
         {
@@ -139,6 +179,10 @@ public class OceanRhythmUIController : MonoBehaviour
         if (pondLayer != null)
         {
             pondLayer.gameObject.SetActive(false);
+        }
+        if (singingShellButton != null)
+        {
+            singingShellButton.SetActive(false);
         }
 
         completeOverlay.SetActive(false);
@@ -182,17 +226,17 @@ public class OceanRhythmUIController : MonoBehaviour
         Color color;
         if (result == OceanRhythmHitResult.Perfect)
         {
-            text = "Perfect";
+            text = "+1 Perfect  " + RemainingLessonText(currentProgress, requiredHits);
             color = new Color(1f, 0.86f, 0.18f);
         }
         else if (result == OceanRhythmHitResult.Good)
         {
-            text = "Good";
+            text = "+1 Good  " + RemainingLessonText(currentProgress, requiredHits);
             color = new Color(0.27f, 0.95f, 0.54f);
         }
         else if (result == OceanRhythmHitResult.Near)
         {
-            text = "Almost";
+            text = "Almost. No bubble yet";
             color = new Color(0.46f, 0.82f, 1f);
         }
         else
@@ -205,6 +249,7 @@ public class OceanRhythmUIController : MonoBehaviour
         feedbackText.color = color;
         feedbackText.transform.localScale = Vector3.one * 1.1f;
         SetProgress(currentProgress, requiredHits);
+        UpdateLessonTargetBubbles(currentProgress, requiredHits, result);
     }
 
     public void MarkGuideFishCollected(int lessonIndex)
@@ -237,9 +282,11 @@ public class OceanRhythmUIController : MonoBehaviour
         Button button = beatCardOverlay.transform.Find("Card/TryButton").GetComponent<Button>();
         Text buttonText = button.GetComponentInChildren<Text>(true);
 
-        title.text = lesson.meterLabel + "  " + BeatName(lesson);
+        title.text = lessonNumber > 0 ? "Rhythm Lesson  " + lessonNumber + " / " + lessonCount : lesson.meterLabel + "  " + BeatName(lesson);
         pattern.text = BeatPatternText(lesson);
-        body.text = lessonNumber > 0 ? BeatBodyText(lesson) + "\nFriend " + lessonNumber + " / " + lessonCount : BeatBodyText(lesson);
+        body.text = lessonNumber > 0
+            ? lesson.meterLabel + "  " + BeatName(lesson) + "\n" + BeatBodyText(lesson) + "\nFill " + lesson.requiredHits + " bubbles to help " + lesson.animalName + "."
+            : BeatBodyText(lesson);
         if (buttonText != null)
         {
             buttonText.text = lessonNumber > 0 ? "Try it" : "Close";
@@ -273,12 +320,26 @@ public class OceanRhythmUIController : MonoBehaviour
         currentFreePondSelection = null;
 
         titleText.text = "Choose a rhythm friend";
+        showingGuidedLesson = false;
         subtitleText.text = "Move the net";
         instructionText.text = "Move the mouse near a fish. Tap Space with its beat.";
         feedbackText.text = "Choose a fish";
         feedbackText.color = new Color(1f, 0.95f, 0.68f);
+        if (learningModeText != null)
+        {
+            learningModeText.gameObject.SetActive(false);
+        }
+        if (lessonGoalText != null)
+        {
+            lessonGoalText.gameObject.SetActive(false);
+        }
+        if (progressHelpText != null)
+        {
+            progressHelpText.gameObject.SetActive(false);
+        }
         SetProgress(0, 1);
         BuildBeatBubbles(0);
+        BuildLessonTargetBubbles(0);
         beatInfoButton.SetActive(false);
 
         Vector2[] positions = new Vector2[]
@@ -529,7 +590,11 @@ public class OceanRhythmUIController : MonoBehaviour
         }
         if (bucketShellText != null)
         {
-            bucketShellText.text = inventory.Shells.ToString();
+            bucketShellText.text = inventory.Shells + " shells";
+        }
+        if (bucketPearlText != null)
+        {
+            bucketPearlText.text = inventory.MusicPearls + " pearls";
         }
         if (bucketDecorationImage != null && manager != null)
         {
@@ -544,6 +609,136 @@ public class OceanRhythmUIController : MonoBehaviour
         UpdateBucket(inventory);
         string reward = animal != null && animal.IsMystery ? "+5 shells  Rare decoration!" : "+1 shell";
         ShowRewardText(reward);
+        RefreshBucketWorkshop(inventory);
+    }
+
+    public void SetSingingShellAvailable(bool available)
+    {
+        if (singingShellButton == null)
+        {
+            return;
+        }
+
+        singingShellButton.SetActive(available || (pondLayer != null && pondLayer.gameObject.activeSelf));
+        if (singingShellButtonImage != null)
+        {
+            singingShellButtonImage.color = available ? new Color(1f, 0.88f, 0.22f, 1f) : new Color(0.7f, 0.92f, 1f, 0.9f);
+        }
+        if (singingShellButtonText != null)
+        {
+            singingShellButtonText.text = available ? "Singing Shell" : "Listen Game";
+        }
+    }
+
+    public void ShowSoundMatch(OceanLesson targetLesson, OceanLesson[] allLessons, bool retry)
+    {
+        if (soundMatchOverlay == null || targetLesson == null || allLessons == null)
+        {
+            return;
+        }
+
+        soundMatchOverlay.SetActive(true);
+        soundMatchTitleText.text = "Listen to the shell";
+        soundMatchBodyText.text = retry ? "Try again. Which friend sings this beat?" : "Which friend sings this beat?";
+        soundMatchResultText.text = "Listen...";
+        soundMatchResultText.color = new Color(1f, 0.94f, 0.68f);
+        BuildSoundMatchBubbles(targetLesson.beatsPerBar);
+
+        Transform optionsRoot = soundMatchOverlay.transform.Find("Card/Options");
+        if (optionsRoot != null)
+        {
+            for (int i = optionsRoot.childCount - 1; i >= 0; i--)
+            {
+                Destroy(optionsRoot.GetChild(i).gameObject);
+            }
+
+            List<OceanLesson> options = BuildSoundMatchOptions(targetLesson, allLessons);
+            for (int i = 0; i < options.Count; i++)
+            {
+                OceanLesson option = options[i];
+                Button button = CreateButton(optionsRoot, "Option_" + option.animalKey, option.animalName + "\n" + option.meterLabel, Vector2.zero, Vector2.zero, new Vector2(170f, 116f), delegate
+                {
+                    if (manager != null)
+                    {
+                        manager.ChooseSoundMatch(option.fishType);
+                    }
+                });
+                Image image = button.GetComponent<Image>();
+                if (image != null)
+                {
+                    image.color = ColorForAnimal(option.animalKey);
+                }
+                LayoutElement layout = button.gameObject.AddComponent<LayoutElement>();
+                layout.minWidth = 170f;
+                layout.minHeight = 116f;
+                layout.preferredWidth = 170f;
+                layout.preferredHeight = 116f;
+            }
+        }
+
+        OceanBucketInventory inventory = manager != null ? manager.GetBucketInventory() : null;
+        if (soundMatchPearlText != null && inventory != null)
+        {
+            soundMatchPearlText.text = inventory.MusicPearls + " music pearls";
+        }
+    }
+
+    public void PulseSoundMatchBeat(int beatInBar, bool accented)
+    {
+        for (int i = 0; i < soundMatchBubbles.Count; i++)
+        {
+            Image bubble = soundMatchBubbles[i];
+            if (bubble == null)
+            {
+                continue;
+            }
+
+            if (i == beatInBar)
+            {
+                bubble.color = accented ? new Color(1f, 0.86f, 0.18f, 1f) : new Color(0.25f, 0.74f, 1f, 1f);
+                bubble.transform.localScale = accented ? Vector3.one * 1.26f : Vector3.one * 1.14f;
+            }
+            else
+            {
+                bubble.color = new Color(0.78f, 0.95f, 1f, 0.4f);
+                bubble.transform.localScale = Vector3.one;
+            }
+        }
+    }
+
+    public void SetSoundMatchChoosing()
+    {
+        if (soundMatchResultText != null)
+        {
+            soundMatchResultText.text = "Choose the rhythm friend";
+            soundMatchResultText.color = Color.white;
+        }
+    }
+
+    public void ShowSoundMatchResult(bool correct, OceanLesson targetLesson, OceanBucketInventory inventory)
+    {
+        if (soundMatchResultText == null)
+        {
+            return;
+        }
+
+        if (correct)
+        {
+            soundMatchResultText.text = "+1 Music Pearl! Now catch the glowing friend.";
+            soundMatchResultText.color = new Color(1f, 0.86f, 0.18f);
+            ShowRewardText("+1 music pearl");
+            Invoke("HideSoundMatchOverlay", 1.15f);
+        }
+        else
+        {
+            soundMatchResultText.text = "Listen again";
+            soundMatchResultText.color = new Color(0.46f, 0.82f, 1f);
+        }
+
+        if (soundMatchPearlText != null && inventory != null)
+        {
+            soundMatchPearlText.text = inventory.MusicPearls + " music pearls";
+        }
         RefreshBucketWorkshop(inventory);
     }
 
@@ -622,10 +817,10 @@ public class OceanRhythmUIController : MonoBehaviour
 
         completeOverlay.SetActive(true);
         Text message = completeOverlay.transform.Find("Card/Message").GetComponent<Text>();
-        message.text = finalLesson ? "All rhythm friends learned!" : lesson.animalName + " rescued!";
+        message.text = finalLesson ? "Free Pond unlocked!" : "Lesson Complete";
 
         Text detail = completeOverlay.transform.Find("Card/Detail").GetComponent<Text>();
-        detail.text = finalLesson ? "Opening the free pond." : "Next rhythm friend is coming.";
+        detail.text = finalLesson ? "All rhythm friends are ready. Opening the free pond." : lesson.animalName + " learned " + lesson.meterLabel + ".";
     }
 
     private void SetProgress(int currentProgress, int requiredHits)
@@ -637,8 +832,89 @@ public class OceanRhythmUIController : MonoBehaviour
         }
         if (progressText != null)
         {
-            progressText.text = currentProgress + " / " + requiredHits;
+            progressText.text = showingGuidedLesson ? "Good taps: " + currentProgress + " / " + requiredHits : currentProgress + " / " + requiredHits;
         }
+    }
+
+    private void BuildLessonTargetBubbles(int requiredHits)
+    {
+        if (lessonTargetBubbleRoot == null)
+        {
+            return;
+        }
+
+        for (int i = lessonTargetBubbleRoot.childCount - 1; i >= 0; i--)
+        {
+            Destroy(lessonTargetBubbleRoot.GetChild(i).gameObject);
+        }
+        lessonTargetBubbles.Clear();
+
+        if (requiredHits <= 1)
+        {
+            lessonTargetBubbleRoot.gameObject.SetActive(false);
+            return;
+        }
+
+        lessonTargetBubbleRoot.gameObject.SetActive(true);
+        for (int i = 0; i < requiredHits; i++)
+        {
+            GameObject bubble = CreateRect(lessonTargetBubbleRoot, "LessonTarget_" + (i + 1), Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(24f, 24f)).gameObject;
+            Image image = bubble.AddComponent<Image>();
+            image.sprite = circleSprite;
+            image.color = new Color(0.78f, 0.95f, 1f, 0.26f);
+            image.preserveAspect = true;
+            LayoutElement layout = bubble.AddComponent<LayoutElement>();
+            layout.minWidth = 24f;
+            layout.minHeight = 24f;
+            lessonTargetBubbles.Add(image);
+        }
+    }
+
+    private void UpdateLessonTargetBubbles(int currentProgress, int requiredHits, OceanRhythmHitResult result)
+    {
+        if (lessonTargetBubbles.Count == 0)
+        {
+            return;
+        }
+
+        for (int i = 0; i < lessonTargetBubbles.Count; i++)
+        {
+            Image bubble = lessonTargetBubbles[i];
+            if (bubble == null)
+            {
+                continue;
+            }
+
+            if (i < currentProgress)
+            {
+                bubble.color = result == OceanRhythmHitResult.Perfect ? new Color(1f, 0.86f, 0.18f, 1f) : new Color(0.27f, 0.95f, 0.54f, 1f);
+                bubble.transform.localScale = i == currentProgress - 1 ? Vector3.one * 1.18f : Vector3.one;
+            }
+            else
+            {
+                bubble.color = result == OceanRhythmHitResult.Miss && i == currentProgress ? new Color(1f, 0.46f, 0.42f, 0.45f) : new Color(0.78f, 0.95f, 1f, 0.26f);
+                bubble.transform.localScale = Vector3.one;
+            }
+        }
+
+        if (progressHelpText != null)
+        {
+            progressHelpText.text = RemainingLessonText(currentProgress, requiredHits);
+        }
+    }
+
+    private string RemainingLessonText(int currentProgress, int requiredHits)
+    {
+        int remaining = Mathf.Max(0, requiredHits - currentProgress);
+        if (remaining == 0)
+        {
+            return "Lesson complete";
+        }
+        if (remaining == 1)
+        {
+            return "1 more";
+        }
+        return remaining + " more";
     }
 
     private void BuildBeatBubbles(int count)
@@ -691,6 +967,7 @@ public class OceanRhythmUIController : MonoBehaviour
         topRect.anchoredPosition = new Vector2(0f, -58f);
         topRect.sizeDelta = new Vector2(1080f, 84f);
 
+        learningModeText = CreateText(top.transform, "LearningMode", "RHYTHM LESSON", new Vector2(0f, 0.5f), new Vector2(96f, 0f), new Vector2(190f, 42f), 22, FontStyle.Bold, new Color(1f, 0.86f, 0.18f), TextAnchor.MiddleCenter);
         titleText = CreateText(top.transform, "AnimalTitle", "Little Fish", new Vector2(0.5f, 0.62f), new Vector2(0f, 0f), new Vector2(620f, 44f), 34, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
         subtitleText = CreateText(top.transform, "Meter", "4/4  76 BPM", new Vector2(0.5f, 0.2f), new Vector2(0f, 0f), new Vector2(480f, 30f), 22, FontStyle.Bold, new Color(1f, 0.86f, 0.24f), TextAnchor.MiddleCenter);
         lessonCounterText = CreateText(top.transform, "LessonCounter", "1 / 4", new Vector2(1f, 0.5f), new Vector2(-66f, 0f), new Vector2(120f, 40f), 24, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
@@ -744,11 +1021,11 @@ public class OceanRhythmUIController : MonoBehaviour
         cardRect.anchorMin = new Vector2(0.5f, 0f);
         cardRect.anchorMax = new Vector2(0.5f, 0f);
         cardRect.anchoredPosition = new Vector2(0f, 118f);
-        cardRect.sizeDelta = new Vector2(940f, 180f);
+        cardRect.sizeDelta = new Vector2(980f, 214f);
 
-        instructionText = CreateText(card.transform, "Instruction", "", new Vector2(0.5f, 0.76f), Vector2.zero, new Vector2(850f, 58f), 25, FontStyle.Normal, Color.white, TextAnchor.MiddleCenter);
+        instructionText = CreateText(card.transform, "Instruction", "", new Vector2(0.5f, 0.82f), Vector2.zero, new Vector2(890f, 54f), 24, FontStyle.Normal, Color.white, TextAnchor.MiddleCenter);
 
-        GameObject beatRow = CreateRect(card.transform, "BeatBubbleRow", new Vector2(0.5f, 0.48f), new Vector2(0.5f, 0.48f), Vector2.zero, new Vector2(560f, 62f)).gameObject;
+        GameObject beatRow = CreateRect(card.transform, "BeatBubbleRow", new Vector2(0.5f, 0.58f), new Vector2(0.5f, 0.58f), Vector2.zero, new Vector2(560f, 58f)).gameObject;
         HorizontalLayoutGroup beatLayout = beatRow.AddComponent<HorizontalLayoutGroup>();
         beatLayout.spacing = 14;
         beatLayout.childAlignment = TextAnchor.MiddleCenter;
@@ -757,12 +1034,14 @@ public class OceanRhythmUIController : MonoBehaviour
         beatLayout.childForceExpandWidth = false;
         beatBubbleRoot = beatRow.transform;
 
-        feedbackText = CreateText(card.transform, "Feedback", "Listen first", new Vector2(0.5f, 0.22f), Vector2.zero, new Vector2(430f, 42f), 30, FontStyle.Bold, new Color(1f, 0.95f, 0.68f), TextAnchor.MiddleCenter);
+        feedbackText = CreateText(card.transform, "Feedback", "Listen first", new Vector2(0.5f, 0.34f), Vector2.zero, new Vector2(520f, 38f), 28, FontStyle.Bold, new Color(1f, 0.95f, 0.68f), TextAnchor.MiddleCenter);
+        lessonGoalText = CreateText(card.transform, "LessonGoal", "Need 12 bright-bubble taps", new Vector2(0.18f, 0.34f), Vector2.zero, new Vector2(240f, 38f), 20, FontStyle.Bold, new Color(1f, 0.94f, 0.68f), TextAnchor.MiddleCenter);
+        progressHelpText = CreateText(card.transform, "ProgressHelp", "Fill the lesson bubbles", new Vector2(0.82f, 0.34f), Vector2.zero, new Vector2(240f, 38f), 20, FontStyle.Bold, new Color(0.78f, 0.95f, 1f), TextAnchor.MiddleCenter);
 
         GameObject progress = CreatePanel(card.transform, "ProgressBar", new Color(1f, 1f, 1f, 0.2f));
         RectTransform progressRect = progress.GetComponent<RectTransform>();
-        progressRect.anchorMin = new Vector2(0.5f, 0.05f);
-        progressRect.anchorMax = new Vector2(0.5f, 0.05f);
+        progressRect.anchorMin = new Vector2(0.5f, 0.11f);
+        progressRect.anchorMax = new Vector2(0.5f, 0.11f);
         progressRect.anchoredPosition = Vector2.zero;
         progressRect.sizeDelta = new Vector2(640f, 22f);
 
@@ -773,7 +1052,16 @@ public class OceanRhythmUIController : MonoBehaviour
         progressFill.fillMethod = Image.FillMethod.Horizontal;
         progressFill.fillOrigin = 0;
 
-        progressText = CreateText(card.transform, "ProgressText", "0 / 12", new Vector2(0.5f, 0.05f), new Vector2(0f, 28f), new Vector2(180f, 28f), 20, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
+        progressText = CreateText(card.transform, "ProgressText", "Good taps: 0 / 12", new Vector2(0.5f, 0.11f), new Vector2(0f, 28f), new Vector2(240f, 28f), 20, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
+
+        GameObject targetRow = CreateRect(card.transform, "LessonTargetBubbleRow", new Vector2(0.5f, 0.02f), new Vector2(0.5f, 0.02f), new Vector2(0f, 8f), new Vector2(760f, 34f)).gameObject;
+        HorizontalLayoutGroup targetLayout = targetRow.AddComponent<HorizontalLayoutGroup>();
+        targetLayout.spacing = 6;
+        targetLayout.childAlignment = TextAnchor.MiddleCenter;
+        targetLayout.childControlWidth = true;
+        targetLayout.childControlHeight = true;
+        targetLayout.childForceExpandWidth = false;
+        lessonTargetBubbleRoot = targetRow.transform;
     }
 
     private void CreateBeatInfoButton(Transform parent)
@@ -890,6 +1178,7 @@ public class OceanRhythmUIController : MonoBehaviour
 
         bucketCountText = CreateText(bucket.transform, "Count", "0", new Vector2(0.62f, 0.62f), Vector2.zero, new Vector2(70f, 36f), 30, FontStyle.Bold, new Color(0.02f, 0.15f, 0.22f), TextAnchor.MiddleCenter);
         bucketShellText = CreateText(bucket.transform, "Shells", "0", new Vector2(0.62f, 0.28f), Vector2.zero, new Vector2(90f, 28f), 20, FontStyle.Bold, new Color(0.02f, 0.15f, 0.22f), TextAnchor.MiddleCenter);
+        bucketPearlText = CreateText(bucket.transform, "MusicPearls", "0 pearls", new Vector2(0.76f, 0.1f), Vector2.zero, new Vector2(110f, 22f), 15, FontStyle.Bold, new Color(0.12f, 0.28f, 0.48f), TextAnchor.MiddleCenter);
     }
 
     private void CreateBucketAlbum(Transform parent)
@@ -903,19 +1192,98 @@ public class OceanRhythmUIController : MonoBehaviour
         cardRect.anchorMin = new Vector2(0.5f, 0.5f);
         cardRect.anchorMax = new Vector2(0.5f, 0.5f);
         cardRect.anchoredPosition = Vector2.zero;
-        cardRect.sizeDelta = new Vector2(900f, 540f);
+        cardRect.sizeDelta = new Vector2(1080f, 620f);
 
-        CreateText(card.transform, "Title", "My Rhythm Bucket", new Vector2(0.5f, 0.91f), Vector2.zero, new Vector2(760f, 54f), 40, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
+        CreateText(card.transform, "Title", "My Rhythm Bucket", new Vector2(0.5f, 0.92f), Vector2.zero, new Vector2(850f, 54f), 42, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
         CreateBucketPreview(card.transform);
         CreateDecorationLibrary(card.transform);
-        bucketHintText = CreateText(card.transform, "Hint", "Tap a locked decoration to see how to unlock it.", new Vector2(0.73f, 0.52f), Vector2.zero, new Vector2(250f, 260f), 24, FontStyle.Bold, new Color(1f, 0.94f, 0.68f), TextAnchor.MiddleCenter);
-        CreateButton(card.transform, "CloseButton", "Close", new Vector2(0.5f, 0.09f), Vector2.zero, new Vector2(200f, 56f), delegate { bucketAlbumOverlay.SetActive(false); });
+        bucketHintText = CreateText(card.transform, "Hint", "Tap a locked decoration to see how to unlock it.", new Vector2(0.78f, 0.52f), Vector2.zero, new Vector2(290f, 300f), 25, FontStyle.Bold, new Color(1f, 0.94f, 0.68f), TextAnchor.MiddleCenter);
+        CreateButton(card.transform, "CloseButton", "Close", new Vector2(0.5f, 0.075f), Vector2.zero, new Vector2(200f, 56f), delegate { bucketAlbumOverlay.SetActive(false); });
     }
 
     private void CreateRewardToast(Transform parent)
     {
         rewardText = CreateText(parent, "RewardToast", "", new Vector2(0.5f, 0.86f), Vector2.zero, new Vector2(620f, 54f), 30, FontStyle.Bold, new Color(1f, 0.86f, 0.18f), TextAnchor.MiddleCenter);
         rewardText.gameObject.SetActive(false);
+    }
+
+    private void CreateSingingShellButton(Transform parent)
+    {
+        GameObject shell = CreatePanel(parent, "SingingShellButton", new Color(1f, 1f, 1f, 0.92f));
+        RectTransform rect = shell.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0f, 0f);
+        rect.anchorMax = new Vector2(0f, 0f);
+        rect.anchoredPosition = new Vector2(140f, 82f);
+        rect.sizeDelta = new Vector2(210f, 92f);
+
+        Button button = shell.AddComponent<Button>();
+        button.targetGraphic = shell.GetComponent<Image>();
+        button.onClick.AddListener(delegate
+        {
+            if (manager != null)
+            {
+                manager.StartSingingShellGame();
+            }
+        });
+
+        singingShellButtonImage = CreateRect(shell.transform, "ShellIcon", new Vector2(0.24f, 0.5f), new Vector2(0.24f, 0.5f), Vector2.zero, new Vector2(62f, 62f)).gameObject.AddComponent<Image>();
+        singingShellButtonImage.sprite = manager != null && manager.GetSingingShellSprite() != null ? manager.GetSingingShellSprite() : circleSprite;
+        singingShellButtonImage.color = new Color(0.7f, 0.92f, 1f, 0.9f);
+        singingShellButtonImage.preserveAspect = true;
+
+        singingShellButtonText = CreateText(shell.transform, "Text", "Listen Game", new Vector2(0.66f, 0.5f), Vector2.zero, new Vector2(118f, 52f), 20, FontStyle.Bold, new Color(0.02f, 0.15f, 0.22f), TextAnchor.MiddleCenter);
+        singingShellButton = shell;
+    }
+
+    private void CreateSoundMatchOverlay(Transform parent)
+    {
+        soundMatchOverlay = CreateRect(parent, "SoundMatchOverlay", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero).gameObject;
+        Image shade = soundMatchOverlay.AddComponent<Image>();
+        shade.color = new Color(0.01f, 0.07f, 0.1f, 0.7f);
+
+        GameObject card = CreatePanel(soundMatchOverlay.transform, "Card", new Color(0.06f, 0.38f, 0.55f, 0.98f));
+        RectTransform cardRect = card.GetComponent<RectTransform>();
+        cardRect.anchorMin = new Vector2(0.5f, 0.5f);
+        cardRect.anchorMax = new Vector2(0.5f, 0.5f);
+        cardRect.anchoredPosition = Vector2.zero;
+        cardRect.sizeDelta = new Vector2(840f, 520f);
+
+        Image shellIcon = CreateRect(card.transform, "ShellIcon", new Vector2(0.5f, 0.79f), new Vector2(0.5f, 0.79f), Vector2.zero, new Vector2(86f, 86f)).gameObject.AddComponent<Image>();
+        shellIcon.sprite = manager != null && manager.GetSingingShellSprite() != null ? manager.GetSingingShellSprite() : circleSprite;
+        shellIcon.color = new Color(1f, 0.88f, 0.22f, 1f);
+        shellIcon.preserveAspect = true;
+
+        soundMatchTitleText = CreateText(card.transform, "Title", "Listen to the shell", new Vector2(0.5f, 0.91f), Vector2.zero, new Vector2(720f, 46f), 36, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
+        soundMatchBodyText = CreateText(card.transform, "Body", "Which friend sings this beat?", new Vector2(0.5f, 0.64f), Vector2.zero, new Vector2(720f, 44f), 26, FontStyle.Bold, new Color(1f, 0.94f, 0.68f), TextAnchor.MiddleCenter);
+
+        GameObject beatRow = CreateRect(card.transform, "SoundBubbles", new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), Vector2.zero, new Vector2(560f, 62f)).gameObject;
+        HorizontalLayoutGroup beatLayout = beatRow.AddComponent<HorizontalLayoutGroup>();
+        beatLayout.spacing = 14;
+        beatLayout.childAlignment = TextAnchor.MiddleCenter;
+        beatLayout.childControlWidth = true;
+        beatLayout.childControlHeight = true;
+        beatLayout.childForceExpandWidth = false;
+        soundMatchBubbleRoot = beatRow.transform;
+
+        GameObject options = CreateRect(card.transform, "Options", new Vector2(0.5f, 0.32f), new Vector2(0.5f, 0.32f), Vector2.zero, new Vector2(620f, 130f)).gameObject;
+        HorizontalLayoutGroup optionLayout = options.AddComponent<HorizontalLayoutGroup>();
+        optionLayout.spacing = 20;
+        optionLayout.childAlignment = TextAnchor.MiddleCenter;
+        optionLayout.childControlWidth = true;
+        optionLayout.childControlHeight = true;
+        optionLayout.childForceExpandWidth = false;
+
+        soundMatchResultText = CreateText(card.transform, "Result", "Listen...", new Vector2(0.5f, 0.16f), Vector2.zero, new Vector2(700f, 44f), 25, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
+        soundMatchPearlText = CreateText(card.transform, "Pearls", "0 music pearls", new Vector2(0.5f, 0.08f), Vector2.zero, new Vector2(260f, 30f), 19, FontStyle.Bold, new Color(0.78f, 0.95f, 1f), TextAnchor.MiddleCenter);
+
+        CreateButton(card.transform, "ReplayButton", "Replay", new Vector2(0.16f, 0.08f), Vector2.zero, new Vector2(150f, 48f), delegate
+        {
+            if (manager != null)
+            {
+                manager.ReplaySoundMatchPattern();
+            }
+        });
+        CreateButton(card.transform, "CloseButton", "Close", new Vector2(0.84f, 0.08f), Vector2.zero, new Vector2(150f, 48f), delegate { soundMatchOverlay.SetActive(false); });
     }
 
     private void CreateBucketPreview(Transform parent)
@@ -925,27 +1293,28 @@ public class OceanRhythmUIController : MonoBehaviour
         bucketRect.anchorMin = new Vector2(0.47f, 0.5f);
         bucketRect.anchorMax = new Vector2(0.47f, 0.5f);
         bucketRect.anchoredPosition = Vector2.zero;
-        bucketRect.sizeDelta = new Vector2(330f, 290f);
+        bucketRect.sizeDelta = new Vector2(420f, 380f);
 
-        Image bucketImage = CreateRect(bucket.transform, "BucketImage", new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.42f), Vector2.zero, new Vector2(210f, 190f)).gameObject.AddComponent<Image>();
+        Image bucketImage = CreateRect(bucket.transform, "BucketImage", new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.42f), Vector2.zero, new Vector2(290f, 250f)).gameObject.AddComponent<Image>();
         bucketImage.sprite = manager != null && manager.GetBucketSprite() != null ? manager.GetBucketSprite() : circleSprite;
         bucketImage.color = new Color(0.95f, 0.62f, 0.22f, 1f);
         bucketImage.preserveAspect = true;
         bucketImage.raycastTarget = false;
 
         bucketSlots.Clear();
-        CreateBucketSlot(bucket.transform, OceanBucketSlotId.TopSlot, new Vector2(0.5f, 0.82f));
-        CreateBucketSlot(bucket.transform, OceanBucketSlotId.LeftSlot, new Vector2(0.23f, 0.48f));
-        CreateBucketSlot(bucket.transform, OceanBucketSlotId.RightSlot, new Vector2(0.77f, 0.48f));
+        CreateBucketSlot(bucket.transform, OceanBucketSlotId.TopSlot, new Vector2(0.5f, 0.84f));
+        CreateBucketSlot(bucket.transform, OceanBucketSlotId.LeftSlot, new Vector2(0.2f, 0.48f));
+        CreateBucketSlot(bucket.transform, OceanBucketSlotId.RightSlot, new Vector2(0.8f, 0.48f));
         CreateBucketSlot(bucket.transform, OceanBucketSlotId.FrontSlot, new Vector2(0.5f, 0.42f));
-        CreateBucketSlot(bucket.transform, OceanBucketSlotId.CharmSlot, new Vector2(0.5f, 0.18f));
+        CreateBucketSlot(bucket.transform, OceanBucketSlotId.CharmSlot, new Vector2(0.5f, 0.14f));
     }
 
     private void CreateBucketSlot(Transform parent, OceanBucketSlotId slotId, Vector2 anchor)
     {
-        GameObject obj = CreateRect(parent, slotId.ToString(), anchor, anchor, Vector2.zero, new Vector2(76f, 76f)).gameObject;
+        GameObject obj = CreateRect(parent, slotId.ToString(), anchor, anchor, Vector2.zero, new Vector2(88f, 88f)).gameObject;
         OceanBucketSlot slot = obj.AddComponent<OceanBucketSlot>();
-        slot.Build(this, slotId, circleSprite, uiFont);
+        Sprite slotSprite = manager != null && manager.GetBucketSlotSprite() != null ? manager.GetBucketSlotSprite() : circleSprite;
+        slot.Build(this, slotId, slotSprite, uiFont);
         bucketSlots.Add(slot);
     }
 
@@ -953,15 +1322,15 @@ public class OceanRhythmUIController : MonoBehaviour
     {
         GameObject library = CreatePanel(parent, "DecorationLibrary", new Color(1f, 1f, 1f, 0.1f));
         RectTransform rect = library.GetComponent<RectTransform>();
-        rect.anchorMin = new Vector2(0.18f, 0.5f);
-        rect.anchorMax = new Vector2(0.18f, 0.5f);
+        rect.anchorMin = new Vector2(0.17f, 0.5f);
+        rect.anchorMax = new Vector2(0.17f, 0.5f);
         rect.anchoredPosition = Vector2.zero;
-        rect.sizeDelta = new Vector2(230f, 300f);
+        rect.sizeDelta = new Vector2(270f, 400f);
 
-        CreateText(library.transform, "LibraryTitle", "Decorations", new Vector2(0.5f, 0.9f), Vector2.zero, new Vector2(200f, 34f), 24, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
-        decorationLibraryRoot = CreateRect(library.transform, "Grid", new Vector2(0.5f, 0.43f), new Vector2(0.5f, 0.43f), Vector2.zero, new Vector2(200f, 220f));
+        CreateText(library.transform, "LibraryTitle", "Decorations", new Vector2(0.5f, 0.92f), Vector2.zero, new Vector2(230f, 34f), 25, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
+        decorationLibraryRoot = CreateRect(library.transform, "Grid", new Vector2(0.5f, 0.45f), new Vector2(0.5f, 0.45f), Vector2.zero, new Vector2(226f, 300f));
         GridLayoutGroup grid = decorationLibraryRoot.gameObject.AddComponent<GridLayoutGroup>();
-        grid.cellSize = new Vector2(82f, 82f);
+        grid.cellSize = new Vector2(96f, 84f);
         grid.spacing = new Vector2(12f, 12f);
         grid.childAlignment = TextAnchor.MiddleCenter;
     }
@@ -1012,11 +1381,11 @@ public class OceanRhythmUIController : MonoBehaviour
             Destroy(decorationLibraryRoot.GetChild(i).gameObject);
         }
 
-        CreateDecorationItem(decorationLibraryRoot, OceanDecorationReward.Seaweed, inventory);
-        CreateDecorationItem(decorationLibraryRoot, OceanDecorationReward.Shell, inventory);
-        CreateDecorationItem(decorationLibraryRoot, OceanDecorationReward.Star, inventory);
-        CreateDecorationItem(decorationLibraryRoot, OceanDecorationReward.Flag, inventory);
-        CreateDecorationItem(decorationLibraryRoot, OceanDecorationReward.Pearl, inventory);
+        OceanDecorationReward[] decorations = OceanBucketInventory.GetAllDecorations();
+        for (int i = 0; i < decorations.Length; i++)
+        {
+            CreateDecorationItem(decorationLibraryRoot, decorations[i], inventory);
+        }
     }
 
     private void CreateDecorationItem(Transform parent, OceanDecorationReward reward, OceanBucketInventory inventory)
@@ -1029,7 +1398,16 @@ public class OceanRhythmUIController : MonoBehaviour
         icon.raycastTarget = false;
         icon.preserveAspect = true;
 
-        CreateText(item.transform, "Label", unlocked ? reward.ToString() : "LOCK", new Vector2(0.5f, 0.18f), Vector2.zero, new Vector2(76f, 22f), 15, FontStyle.Bold, unlocked ? new Color(0.02f, 0.15f, 0.22f) : Color.white, TextAnchor.MiddleCenter);
+        CreateText(item.transform, "Label", unlocked ? DecorationLabel(reward) : "LOCK", new Vector2(0.5f, 0.18f), Vector2.zero, new Vector2(90f, 22f), 14, FontStyle.Bold, unlocked ? new Color(0.02f, 0.15f, 0.22f) : Color.white, TextAnchor.MiddleCenter);
+        if (!unlocked)
+        {
+            Image lockIcon = CreateRect(item.transform, "LockIcon", new Vector2(0.78f, 0.77f), new Vector2(0.78f, 0.77f), Vector2.zero, new Vector2(24f, 24f)).gameObject.AddComponent<Image>();
+            Sprite lockSprite = manager != null ? manager.GetLockSprite() : null;
+            lockIcon.sprite = lockSprite != null ? lockSprite : circleSprite;
+            lockIcon.color = new Color(1f, 0.94f, 0.68f, 0.95f);
+            lockIcon.preserveAspect = true;
+            lockIcon.raycastTarget = false;
+        }
 
         OceanDecorationDragItem dragItem = item.AddComponent<OceanDecorationDragItem>();
         dragItem.Build(this, reward, unlocked);
@@ -1050,7 +1428,14 @@ public class OceanRhythmUIController : MonoBehaviour
         }
 
         OceanDecorationUnlockRequirement requirement = inventory.GetUnlockProgress(reward);
-        ShowBucketHint("Catch " + requirement.Remaining + " more " + FishName(requirement.fishType) + " to unlock " + reward);
+        if (requirement.usesMusicPearls)
+        {
+            ShowBucketHint("Earn " + requirement.Remaining + " more Music Pearls to unlock " + DecorationLabel(reward));
+        }
+        else
+        {
+            ShowBucketHint("Catch " + requirement.Remaining + " more " + FishName(requirement.fishType) + " to unlock " + DecorationLabel(reward));
+        }
     }
 
     public void ShowBucketHint(string text)
@@ -1101,7 +1486,7 @@ public class OceanRhythmUIController : MonoBehaviour
                 inventory.SetSlotDecoration(slot.slotId, reward);
                 slot.SetDecoration(reward, GetDecorationSprite(reward), ColorForDecoration(reward));
                 UpdateBucket(inventory);
-                ShowBucketHint(reward + " placed on " + slot.slotId);
+                ShowBucketHint(DecorationLabel(reward) + " placed on " + slot.slotId);
                 return true;
             }
         }
@@ -1269,7 +1654,36 @@ public class OceanRhythmUIController : MonoBehaviour
         {
             return new Color(0.9f, 0.78f, 1f);
         }
+        if (reward == OceanDecorationReward.BellCharm)
+        {
+            return new Color(1f, 0.78f, 0.2f);
+        }
+        if (reward == OceanDecorationReward.GlowStar)
+        {
+            return new Color(0.45f, 0.95f, 1f);
+        }
+        if (reward == OceanDecorationReward.WaveRibbon)
+        {
+            return new Color(0.42f, 0.62f, 1f);
+        }
         return new Color(0.36f, 0.88f, 0.48f);
+    }
+
+    private string DecorationLabel(OceanDecorationReward reward)
+    {
+        if (reward == OceanDecorationReward.BellCharm)
+        {
+            return "Bell";
+        }
+        if (reward == OceanDecorationReward.GlowStar)
+        {
+            return "Glow";
+        }
+        if (reward == OceanDecorationReward.WaveRibbon)
+        {
+            return "Ribbon";
+        }
+        return reward.ToString();
     }
 
     private string FishName(OceanFishType fishType)
@@ -1312,6 +1726,69 @@ public class OceanRhythmUIController : MonoBehaviour
         {
             rewardText.gameObject.SetActive(false);
         }
+    }
+
+    private void HideSoundMatchOverlay()
+    {
+        if (soundMatchOverlay != null)
+        {
+            soundMatchOverlay.SetActive(false);
+        }
+    }
+
+    private void BuildSoundMatchBubbles(int count)
+    {
+        if (soundMatchBubbleRoot == null)
+        {
+            return;
+        }
+
+        for (int i = soundMatchBubbleRoot.childCount - 1; i >= 0; i--)
+        {
+            Destroy(soundMatchBubbleRoot.GetChild(i).gameObject);
+        }
+        soundMatchBubbles.Clear();
+
+        for (int i = 0; i < count; i++)
+        {
+            GameObject bubble = CreateRect(soundMatchBubbleRoot, "SoundBeat_" + (i + 1), Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(58f, 58f)).gameObject;
+            Image image = bubble.AddComponent<Image>();
+            image.sprite = circleSprite;
+            image.color = new Color(0.78f, 0.95f, 1f, 0.4f);
+            image.preserveAspect = true;
+
+            Text number = CreateText(bubble.transform, "Number", (i + 1).ToString(), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(50f, 50f), 23, FontStyle.Bold, new Color(0.02f, 0.16f, 0.24f), TextAnchor.MiddleCenter);
+            number.raycastTarget = false;
+
+            LayoutElement layout = bubble.AddComponent<LayoutElement>();
+            layout.minWidth = 58f;
+            layout.minHeight = 58f;
+            soundMatchBubbles.Add(image);
+        }
+    }
+
+    private List<OceanLesson> BuildSoundMatchOptions(OceanLesson targetLesson, OceanLesson[] allLessons)
+    {
+        List<OceanLesson> options = new List<OceanLesson>();
+        options.Add(targetLesson);
+        for (int i = 0; i < allLessons.Length && options.Count < 3; i++)
+        {
+            OceanLesson lesson = allLessons[i];
+            if (lesson != null && lesson.fishType != targetLesson.fishType)
+            {
+                options.Add(lesson);
+            }
+        }
+
+        for (int i = 0; i < options.Count; i++)
+        {
+            int swapIndex = Random.Range(i, options.Count);
+            OceanLesson temp = options[i];
+            options[i] = options[swapIndex];
+            options[swapIndex] = temp;
+        }
+
+        return options;
     }
 
     private OceanPondAnimal ApplyFreePondSelection(OceanPondAnimal selected)

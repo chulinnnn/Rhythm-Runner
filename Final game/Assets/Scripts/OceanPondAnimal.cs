@@ -37,6 +37,7 @@ public class OceanPondAnimal : MonoBehaviour
     private bool isHovered;
     private float pulseScale = 1f;
     private float shakeTimer;
+    private float glowTimer;
 
     public void Build(OceanLesson lesson, Sprite animalSprite, Sprite bubbleSprite, Font font, Color fallbackColor, Vector2 startPosition)
     {
@@ -127,6 +128,18 @@ public class OceanPondAnimal : MonoBehaviour
         RefreshCaptureBubbles(result);
     }
 
+    public void HighlightFromSoundMatch()
+    {
+        if (IsCaptured)
+        {
+            return;
+        }
+
+        glowTimer = 3.5f;
+        pulseScale = 1.32f;
+        SetHovered(true);
+    }
+
     public void PlayRescue()
     {
         IsCaptured = true;
@@ -177,6 +190,11 @@ public class OceanPondAnimal : MonoBehaviour
             target += new Vector2(Mathf.Sin(Time.time * 38f) * 7f, 0f);
         }
 
+        if (glowTimer > 0f)
+        {
+            glowTimer -= Time.deltaTime;
+        }
+
         rectTransform.anchoredPosition = Vector2.Lerp(rectTransform.anchoredPosition, target, Time.deltaTime * 2.8f);
 
         float targetScale = IsCaptured ? 1.24f : (isSelected ? 1.16f : (isHovered ? 1.08f : 1f));
@@ -187,6 +205,10 @@ public class OceanPondAnimal : MonoBehaviour
         {
             Color color = animalImage.color;
             color.a = IsCaptured ? Mathf.Lerp(color.a, 0.45f, Time.deltaTime * 2.4f) : Mathf.Lerp(color.a, 1f, Time.deltaTime * 4f);
+            if (glowTimer > 0f)
+            {
+                color = Color.Lerp(color, new Color(1f, 0.9f, 0.22f, 1f), 0.35f + Mathf.Sin(Time.time * 8f) * 0.12f);
+            }
             animalImage.color = color;
         }
     }

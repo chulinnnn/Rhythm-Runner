@@ -15,7 +15,10 @@ public enum OceanDecorationReward
     Shell,
     Star,
     Flag,
-    Pearl
+    Pearl,
+    BellCharm,
+    GlowStar,
+    WaveRibbon
 }
 
 public enum OceanBucketSlotId
@@ -32,6 +35,7 @@ public struct OceanDecorationUnlockRequirement
     public OceanFishType fishType;
     public int requiredCount;
     public int currentCount;
+    public bool usesMusicPearls;
 
     public int Remaining
     {
@@ -48,12 +52,22 @@ public struct OceanDecorationUnlockRequirement
         this.fishType = fishType;
         this.requiredCount = requiredCount;
         this.currentCount = currentCount;
+        this.usesMusicPearls = false;
+    }
+
+    public OceanDecorationUnlockRequirement(int requiredMusicPearls, int currentMusicPearls)
+    {
+        this.fishType = OceanFishType.Fish;
+        this.requiredCount = requiredMusicPearls;
+        this.currentCount = currentMusicPearls;
+        this.usesMusicPearls = true;
     }
 }
 
 public class OceanBucketInventory
 {
     private const string ShellsKey = "OceanBucket_Shells";
+    private const string MusicPearlsKey = "OceanBucket_MusicPearls";
     private const string SelectedDecorationKey = "OceanBucket_SelectedDecoration";
     private const string CatchCountPrefix = "OceanBucket_Catch_";
     private const string DecorationPrefix = "OceanBucket_Decoration_";
@@ -62,6 +76,11 @@ public class OceanBucketInventory
     public int Shells
     {
         get { return PlayerPrefs.GetInt(ShellsKey, 0); }
+    }
+
+    public int MusicPearls
+    {
+        get { return PlayerPrefs.GetInt(MusicPearlsKey, 0); }
     }
 
     public OceanDecorationReward SelectedDecoration
@@ -73,6 +92,12 @@ public class OceanBucketInventory
     {
         PlayerPrefs.SetInt(CatchCountPrefix + fishType, GetCatchCount(fishType) + 1);
         PlayerPrefs.SetInt(ShellsKey, Shells + Mathf.Max(0, shellReward));
+        PlayerPrefs.Save();
+    }
+
+    public void AddMusicPearls(int amount)
+    {
+        PlayerPrefs.SetInt(MusicPearlsKey, MusicPearls + Mathf.Max(0, amount));
         PlayerPrefs.Save();
     }
 
@@ -133,8 +158,35 @@ public class OceanBucketInventory
         {
             return new OceanDecorationUnlockRequirement(OceanFishType.Turtle, 3, GetCatchCount(OceanFishType.Turtle));
         }
+        if (reward == OceanDecorationReward.BellCharm)
+        {
+            return new OceanDecorationUnlockRequirement(3, MusicPearls);
+        }
+        if (reward == OceanDecorationReward.GlowStar)
+        {
+            return new OceanDecorationUnlockRequirement(5, MusicPearls);
+        }
+        if (reward == OceanDecorationReward.WaveRibbon)
+        {
+            return new OceanDecorationUnlockRequirement(8, MusicPearls);
+        }
 
         return new OceanDecorationUnlockRequirement(OceanFishType.Mystery, 1, GetCatchCount(OceanFishType.Mystery));
+    }
+
+    public static OceanDecorationReward[] GetAllDecorations()
+    {
+        return new OceanDecorationReward[]
+        {
+            OceanDecorationReward.Seaweed,
+            OceanDecorationReward.Shell,
+            OceanDecorationReward.Star,
+            OceanDecorationReward.Flag,
+            OceanDecorationReward.Pearl,
+            OceanDecorationReward.BellCharm,
+            OceanDecorationReward.GlowStar,
+            OceanDecorationReward.WaveRibbon
+        };
     }
 
     public bool HasSlotDecoration(OceanBucketSlotId slotId)

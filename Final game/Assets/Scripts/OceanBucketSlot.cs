@@ -12,6 +12,7 @@ public class OceanBucketSlot : MonoBehaviour, IPointerClickHandler
     private Text labelText;
     private bool hasDecoration;
     private OceanDecorationReward decoration;
+    private float pulseScale = 1f;
 
     public void Build(OceanRhythmUIController owner, OceanBucketSlotId slotId, Sprite slotSprite, Font font)
     {
@@ -58,6 +59,7 @@ public class OceanBucketSlot : MonoBehaviour, IPointerClickHandler
         decorationImage.sprite = sprite;
         decorationImage.color = color;
         decorationImage.gameObject.SetActive(true);
+        pulseScale = 1.28f;
     }
 
     public void ClearDecoration()
@@ -121,5 +123,11 @@ public class OceanBucketSlot : MonoBehaviour, IPointerClickHandler
     private string DecorationName(OceanDecorationReward reward)
     {
         return reward.ToString();
+    }
+
+    private void Update()
+    {
+        pulseScale = Mathf.Lerp(pulseScale, 1f, Time.unscaledDeltaTime * 8f);
+        transform.localScale = Vector3.one * pulseScale;
     }
 }

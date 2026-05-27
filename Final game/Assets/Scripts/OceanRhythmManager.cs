@@ -9,6 +9,16 @@ public enum OceanRhythmPhase
     FreePond
 }
 
+public enum OceanSoundMatchState
+{
+    Idle,
+    ShellAvailable,
+    Listening,
+    Choosing,
+    Correct,
+    Retry
+}
+
 [DefaultExecutionOrder(-140)]
 public class OceanRhythmManager : MonoBehaviour
 {
@@ -22,11 +32,19 @@ public class OceanRhythmManager : MonoBehaviour
     public Sprite jellyfishSprite;
     public Sprite netSprite;
     public Sprite bucketSprite;
+    public Sprite bucketSlotSprite;
+    public Sprite lockSprite;
     public Sprite shellSprite;
     public Sprite coralSprite;
     public Sprite seaweedSprite;
     public Sprite starSprite;
+    public Sprite flagSprite;
+    public Sprite pearlSprite;
     public Sprite mysteryFishSprite;
+    public Sprite singingShellSprite;
+    public Sprite bellCharmSprite;
+    public Sprite glowStarSprite;
+    public Sprite waveRibbonSprite;
     public Sprite[] fishVariantSprites;
     public Sprite[] bucketDecorationSprites;
 
@@ -61,6 +79,11 @@ public class OceanRhythmManager : MonoBehaviour
     private OceanBucketInventory bucketInventory;
     private float nextMysterySpawnTime;
     private int mysteryCounter;
+    private OceanSoundMatchState soundMatchState;
+    private OceanLesson soundMatchLesson;
+    private int catchesSinceLastSingingShell;
+    private bool singingShellAvailable;
+    private bool firstSingingShellShown;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void RegisterSceneHook()
@@ -241,9 +264,24 @@ public class OceanRhythmManager : MonoBehaviour
         return bucketSprite;
     }
 
+    public Sprite GetBucketSlotSprite()
+    {
+        return bucketSlotSprite;
+    }
+
+    public Sprite GetLockSprite()
+    {
+        return lockSprite;
+    }
+
     public Sprite GetShellSprite()
     {
         return shellSprite;
+    }
+
+    public Sprite GetSingingShellSprite()
+    {
+        return singingShellSprite != null ? singingShellSprite : shellSprite;
     }
 
     public Sprite GetDecorationSprite(OceanDecorationReward reward)
@@ -267,7 +305,23 @@ public class OceanRhythmManager : MonoBehaviour
         }
         if (reward == OceanDecorationReward.Flag)
         {
-            return coralSprite;
+            return flagSprite != null ? flagSprite : coralSprite;
+        }
+        if (reward == OceanDecorationReward.Pearl)
+        {
+            return pearlSprite != null ? pearlSprite : shellSprite;
+        }
+        if (reward == OceanDecorationReward.BellCharm)
+        {
+            return bellCharmSprite != null ? bellCharmSprite : shellSprite;
+        }
+        if (reward == OceanDecorationReward.GlowStar)
+        {
+            return glowStarSprite != null ? glowStarSprite : starSprite;
+        }
+        if (reward == OceanDecorationReward.WaveRibbon)
+        {
+            return waveRibbonSprite != null ? waveRibbonSprite : coralSprite;
         }
 
         return shellSprite;
@@ -483,8 +537,13 @@ public class OceanRhythmManager : MonoBehaviour
         {
             uiController.ShowFreePond(lessons, pondAnimals, 2);
             uiController.UpdateBucket(bucketInventory);
+            uiController.SetSingingShellAvailable(false);
         }
 
+        singingShellAvailable = false;
+        soundMatchState = OceanSoundMatchState.Idle;
+        catchesSinceLastSingingShell = 0;
+        firstSingingShellShown = false;
         ScheduleNextMysteryFish(8f, 18f);
     }
 
@@ -572,6 +631,149 @@ public class OceanRhythmManager : MonoBehaviour
             {
                 StartCoroutine(RespawnPondAnimalRoutine(capturedAnimal));
             }
+
+            OnFreePondCatchCompleted(capturedAnimal);
+        }
+    }
+
+    private void OnFreePondCatchCompleted(OceanPondAnimal capturedAnimal)
+    {
+        if (capturedAnimal == null || capturedAnimal.IsMystery)
+        {
+            return;
+        }
+
+        catchesSinceLastSingingShell++;
+        int threshold = firstSingingShellShown ? 3 : 1;
+        if (!singingShellAvailable && catchesSinceLastSingingShell >= threshold)
+        {
+            ShowSingingShell();
+        }
+    }
+
+    private void ShowSingingShell()
+    {
+        if (uiController == null)
+        {
+            return;
+        }
+
+        singingShellAvailable = true;
+        firstSingingShellShown = true;
+        soundMatchState = OceanSoundMatchState.ShellAvailable;
+        uiController.SetSingingShellAvailable(true);
+    }
+
+    public void StartSingingShellGame()
+    {
+        if (phase != OceanRhythmPhase.FreePond || lessons == null || lessons.Length == 0)
+        {
+            return;
+        }
+
+        soundMatchLesson = lessons[Random.Range(0, lessons.Length)];
+        soundMatchState = OceanSoundMatchState.Listening;
+        if (uiController != null)
+        {
+            uiController.ShowSoundMatch(soundMatchLesson, lessons, false);
+        }
+        StartCoroutine(PlaySoundMatchPatternRoutine(soundMatchLesson));
+    }
+
+    public void ReplaySoundMatchPattern()
+    {
+        if (soundMatchLesson == null)
+        {
+            return;
+        }
+
+        StartCoroutine(PlaySoundMatchPatternRoutine(soundMatchLesson));
+    }
+
+    public void ChooseSoundMatch(OceanFishType fishType)
+    {
+        if (soundMatchLesson == null || uiController == null)
+        {
+            return;
+        }
+
+        bool correct = fishType == soundMatchLesson.fishType;
+        if (correct)
+        {
+            soundMatchState = OceanSoundMatchState.Correct;
+            singingShellAvailable = false;
+            catchesSinceLastSingingShell = 0;
+            bucketInventory.AddMusicPearls(1);
+            UnlockMusicPearlDecorations();
+            uiController.UpdateBucket(bucketInventory);
+            uiController.SetSingingShellAvailable(false);
+            uiController.ShowSoundMatchResult(true, soundMatchLesson, bucketInventory);
+            HighlightSoundMatchFish(soundMatchLesson.fishType);
+        }
+        else
+        {
+            soundMatchState = OceanSoundMatchState.Retry;
+            uiController.ShowSoundMatchResult(false, soundMatchLesson, bucketInventory);
+            StartCoroutine(PlaySoundMatchPatternRoutine(soundMatchLesson));
+        }
+    }
+
+    private IEnumerator PlaySoundMatchPatternRoutine(OceanLesson lesson)
+    {
+        if (lesson == null)
+        {
+            yield break;
+        }
+
+        soundMatchState = OceanSoundMatchState.Listening;
+        float interval = 60f / Mathf.Max(30f, lesson.bpm);
+        for (int i = 0; i < lesson.beatsPerBar; i++)
+        {
+            bool accented = lesson.IsAccentBeat(i);
+            if (metronomeAudio != null)
+            {
+                metronomeAudio.PlayBeat(accented);
+            }
+            if (uiController != null)
+            {
+                uiController.PulseSoundMatchBeat(i, accented);
+            }
+            yield return new WaitForSeconds(interval);
+        }
+
+        soundMatchState = OceanSoundMatchState.Choosing;
+        if (uiController != null)
+        {
+            uiController.SetSoundMatchChoosing();
+        }
+    }
+
+    private void HighlightSoundMatchFish(OceanFishType fishType)
+    {
+        for (int i = 0; i < pondAnimals.Count; i++)
+        {
+            OceanPondAnimal animal = pondAnimals[i];
+            if (animal != null && !animal.IsCaptured && animal.FishType == fishType)
+            {
+                animal.HighlightFromSoundMatch();
+                break;
+            }
+        }
+    }
+
+    private void UnlockMusicPearlDecorations()
+    {
+        if (bucketInventory.MusicPearls >= 3)
+        {
+            bucketInventory.UnlockDecoration(OceanDecorationReward.BellCharm);
+        }
+        if (bucketInventory.MusicPearls >= 5)
+        {
+            bucketInventory.UnlockDecoration(OceanDecorationReward.GlowStar);
+        }
+        if (bucketInventory.MusicPearls >= 8)
+        {
+            bucketInventory.UnlockDecoration(OceanDecorationReward.WaveRibbon);
         }
     }
 
