@@ -22,7 +22,7 @@ public class OceanPondAnimal : MonoBehaviour
         }
     }
 
-    private const int requiredHits = 6;
+    public int requiredHits = 3;
 
     private RectTransform rectTransform;
     private Image animalImage;
@@ -35,9 +35,13 @@ public class OceanPondAnimal : MonoBehaviour
     private float swimSeed;
     private bool isSelected;
     private bool isHovered;
+    private bool flyingToBucket;
     private float pulseScale = 1f;
     private float shakeTimer;
     private float glowTimer;
+    private float flyTimer;
+    private Vector2 flyStartPosition;
+    private Vector2 flyTargetPosition;
 
     public void Build(OceanLesson lesson, Sprite animalSprite, Sprite bubbleSprite, Font font, Color fallbackColor, Vector2 startPosition)
     {
@@ -48,6 +52,7 @@ public class OceanPondAnimal : MonoBehaviour
     {
         Lesson = lesson;
         InstanceId = instanceId;
+        requiredHits = Mathf.Max(1, lesson != null ? lesson.beatsPerBar : requiredHits);
         rectTransform = GetComponent<RectTransform>();
         basePosition = startPosition;
         rectTransform.anchoredPosition = startPosition;
@@ -61,12 +66,15 @@ public class OceanPondAnimal : MonoBehaviour
         string displayName = IsMystery ? "?" : lesson.animalName;
         nameText = CreateText("Name", displayName, font, new Vector2(0.5f, 0.5f), new Vector2(0f, 8f), new Vector2(160f, 40f), 22, FontStyle.Bold, new Color(0.02f, 0.16f, 0.24f));
         nameText.raycastTarget = false;
+        nameText.gameObject.SetActive(false);
 
-        meterText = CreateText("Meter", IsMystery ? "?" : lesson.meterLabel, font, new Vector2(0.5f, 1f), new Vector2(0f, 36f), new Vector2(110f, 34f), 24, FontStyle.Bold, Color.white);
+        meterText = CreateText("Meter", IsMystery ? "?" : "Tap!", font, new Vector2(0.5f, 1f), new Vector2(0f, 36f), new Vector2(110f, 34f), 24, FontStyle.Bold, Color.white);
         meterText.raycastTarget = false;
+        meterText.gameObject.SetActive(false);
 
-        remainingText = CreateText("Remaining", RemainingHitsText, font, new Vector2(0.5f, 0f), new Vector2(0f, -32f), new Vector2(130f, 30f), 20, FontStyle.Bold, Color.white);
+        remainingText = CreateText("Remaining", "", font, new Vector2(0.5f, 0f), new Vector2(0f, -32f), new Vector2(130f, 30f), 20, FontStyle.Bold, Color.white);
         remainingText.raycastTarget = false;
+        remainingText.gameObject.SetActive(false);
 
         CreateCaptureBubbles(bubbleSprite);
         SetSelected(false);
@@ -78,17 +86,18 @@ public class OceanPondAnimal : MonoBehaviour
         if (IsMystery && selected)
         {
             nameText.text = Lesson.animalName;
-            meterText.text = Lesson.meterLabel;
+            meterText.text = "Tap!";
         }
 
         if (meterText != null)
         {
-            meterText.gameObject.SetActive(selected || isHovered);
+            meterText.gameObject.SetActive(false);
         }
-        if (remainingText != null)
+        if (nameText != null)
         {
-            remainingText.gameObject.SetActive(selected || CaptureProgress > 0);
+            nameText.gameObject.SetActive(false);
         }
+        HideRemainingText();
     }
 
     public void SetHovered(bool hovered)
@@ -96,7 +105,7 @@ public class OceanPondAnimal : MonoBehaviour
         isHovered = hovered;
         if (meterText != null)
         {
-            meterText.gameObject.SetActive(isSelected || isHovered);
+            meterText.gameObject.SetActive(false);
         }
     }
 
@@ -140,9 +149,14 @@ public class OceanPondAnimal : MonoBehaviour
         SetHovered(true);
     }
 
-    public void PlayRescue()
+    public void PlayRescue(Vector2 bucketPosition)
     {
         IsCaptured = true;
+        flyingToBucket = true;
+        flyTimer = 0f;
+        transform.SetAsLastSibling();
+        flyStartPosition = rectTransform != null ? rectTransform.anchoredPosition : AnchoredPosition;
+        flyTargetPosition = bucketPosition;
         pulseScale = 1.45f;
         SetSelected(false);
     }
@@ -151,8 +165,11 @@ public class OceanPondAnimal : MonoBehaviour
     {
         CaptureProgress = 0;
         IsCaptured = false;
+        flyingToBucket = false;
+        flyTimer = 0f;
         shakeTimer = 0f;
         pulseScale = 1f;
+        transform.SetAsLastSibling();
         rectTransform.anchoredPosition = basePosition;
         if (animalImage != null)
         {
@@ -164,7 +181,7 @@ public class OceanPondAnimal : MonoBehaviour
         RefreshCaptureBubbles(OceanRhythmHitResult.Near);
         if (remainingText != null)
         {
-            remainingText.gameObject.SetActive(false);
+            HideRemainingText();
         }
         SetSelected(false);
     }
@@ -173,6 +190,24 @@ public class OceanPondAnimal : MonoBehaviour
     {
         if (rectTransform == null)
         {
+            return;
+        }
+
+        if (flyingToBucket)
+        {
+            flyTimer += Time.deltaTime;
+            float progress = Mathf.Clamp01(flyTimer / 0.8f);
+            float eased = 1f - Mathf.Pow(1f - progress, 3f);
+            Vector2 arc = Vector2.up * Mathf.Sin(progress * Mathf.PI) * 150f;
+            rectTransform.anchoredPosition = Vector2.Lerp(flyStartPosition, flyTargetPosition, eased) + arc;
+            pulseScale = Mathf.Lerp(pulseScale, 0.38f, Time.deltaTime * 7f);
+            rectTransform.localScale = Vector3.one * pulseScale;
+            if (animalImage != null)
+            {
+                Color color = animalImage.color;
+                color.a = Mathf.Lerp(1f, 0.15f, progress);
+                animalImage.color = color;
+            }
             return;
         }
 
@@ -271,8 +306,16 @@ public class OceanPondAnimal : MonoBehaviour
 
         if (remainingText != null)
         {
-            remainingText.text = RemainingHitsText;
-            remainingText.gameObject.SetActive(true);
+            HideRemainingText();
+        }
+    }
+
+    private void HideRemainingText()
+    {
+        if (remainingText != null)
+        {
+            remainingText.text = "";
+            remainingText.gameObject.SetActive(false);
         }
     }
 

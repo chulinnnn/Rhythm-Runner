@@ -168,7 +168,7 @@ public class StartMenuController : MonoBehaviour
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = true;
 
-        CreateModeCard(row.transform, "Little Rhythm Ocean", "Under 5", "Tap Space to rescue ocean friends.", new Color(0.12f, 0.68f, 0.85f), delegate { LoadScene(littleRhythmSceneName); });
+        CreateModeCard(row.transform, "Little Rhythm Ocean", "Under 5", "Move the net. Tap with the bright bubble.", new Color(0.12f, 0.68f, 0.85f), delegate { LoadScene(littleRhythmSceneName); });
         CreateModeCard(row.transform, "Rhythm Runner", "Age 5-10", "Learn the beat, then run the level.", new Color(1f, 0.64f, 0.2f), delegate { LoadScene(runnerSceneName); });
         CreateModeCard(row.transform, "Advanced Runner", "Challenge", "A faster route for practiced players.", new Color(0.42f, 0.78f, 0.34f), delegate { LoadScene(advancedRunnerSceneName); });
     }
@@ -233,7 +233,7 @@ public class StartMenuController : MonoBehaviour
     {
         GameObject panel = CreateOverlay(parent, "AboutPanel", "About");
         CreateText(panel.transform, "Body",
-            "Beat Bunny helps children feel rhythm through play.\n\nLittle Rhythm Ocean is for children under 5: no running, no losing, just listening and tapping.\n\nRhythm Runner is for children 5-10: learn the beat in Tutorial, then use rhythm to survive the run.",
+            "Beat Bunny helps children feel rhythm through play.\n\nLittle Rhythm Ocean is for children under 5. It opens straight into play: help the child click a fish, then click TAP or press Space when the bright bubble lights up. There is no losing and no lesson screen to read.\n\nRhythm Runner is for children 5-10: learn the beat in Tutorial, then use rhythm to survive the run.",
             new Vector2(0.5f, 0.52f), new Vector2(0f, 0f), new Vector2(760f, 300f), 27, FontStyle.Normal, Color.white, TextAnchor.MiddleCenter);
         return panel;
     }

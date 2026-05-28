@@ -24,6 +24,9 @@ public class OceanRhythmManager : MonoBehaviour
 {
     private static bool registered;
 
+    [Header("0-5 Flow")]
+    public bool startInFreePond = true;
+
     [Header("Sprites")]
     public Sprite waterBackgroundSprite;
     public Sprite fishSprite;
@@ -73,6 +76,7 @@ public class OceanRhythmManager : MonoBehaviour
     private bool acceptingInput;
     private bool changingLesson;
     private bool pondCompleted;
+    private bool paused;
     private OceanPondAnimal selectedPondAnimal;
     private OceanPondAnimal currentMysteryAnimal;
     private readonly List<OceanPondAnimal> pondAnimals = new List<OceanPondAnimal>();
@@ -158,14 +162,26 @@ public class OceanRhythmManager : MonoBehaviour
         }
 
         uiController.Build(this);
-        StartLesson(0);
+        if (startInFreePond)
+        {
+            EnterFreePond();
+        }
+        else
+        {
+            StartLesson(0);
+        }
     }
 
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            SceneTransitionManager.LoadScene("Start");
+            ReturnToStart();
+        }
+
+        if (paused)
+        {
+            return;
         }
 
         if (!acceptingInput)
@@ -187,18 +203,30 @@ public class OceanRhythmManager : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            JudgeSpaceInput();
+            TryTapInput();
         }
 
     }
 
+    public void TryTapInput()
+    {
+        if (paused)
+        {
+            return;
+        }
+
+        JudgeSpaceInput();
+    }
+
     public void ReturnToStart()
     {
+        SetPaused(false);
         SceneTransitionManager.LoadScene("Start");
     }
 
     public void RestartCurrentLesson()
     {
+        SetPaused(false);
         if (phase == OceanRhythmPhase.FreePond)
         {
             EnterFreePond();
@@ -210,17 +238,52 @@ public class OceanRhythmManager : MonoBehaviour
 
     public void RestartOceanRhythm()
     {
+        SetPaused(false);
         if (musicSource != null && musicSource.isPlaying)
         {
             musicSource.Stop();
         }
 
-        StartLesson(0);
+        if (startInFreePond)
+        {
+            EnterFreePond();
+        }
+        else
+        {
+            StartLesson(0);
+        }
     }
 
     public void RestartFreePond()
     {
+        SetPaused(false);
         EnterFreePond();
+    }
+
+    public void TogglePause()
+    {
+        SetPaused(!paused);
+    }
+
+    private void SetPaused(bool value)
+    {
+        paused = value;
+        Time.timeScale = paused ? 0f : 1f;
+        if (musicSource != null)
+        {
+            if (paused && musicSource.isPlaying)
+            {
+                musicSource.Pause();
+            }
+            else if (!paused && musicSource.clip != null)
+            {
+                musicSource.UnPause();
+            }
+        }
+        if (uiController != null)
+        {
+            uiController.SetPauseState(paused);
+        }
     }
 
     public Sprite GetSpriteForLesson(OceanLesson lesson)
@@ -613,7 +676,8 @@ public class OceanRhythmManager : MonoBehaviour
         {
             OceanPondAnimal capturedAnimal = selectedPondAnimal;
             AwardCatch(capturedAnimal);
-            selectedPondAnimal.PlayRescue();
+            Vector2 bucketTarget = uiController != null ? uiController.GetBucketDropPositionInPond() : capturedAnimal.AnchoredPosition + new Vector2(0f, 86f);
+            selectedPondAnimal.PlayRescue(bucketTarget);
             if (uiController != null)
             {
                 uiController.MarkFreePondFishCollected(capturedAnimal.Lesson);
