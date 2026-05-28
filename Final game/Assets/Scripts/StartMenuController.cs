@@ -16,7 +16,7 @@ public class StartMenuController : MonoBehaviour
     [Header("Scene routes")]
     public string littleRhythmSceneName = "OceanRhythm";
     public string runnerSceneName = "Tutorial";
-    public string advancedRunnerSceneName = "Game2";
+    public string advancedRunnerSceneName = "AdvancedTutorial";
 
     private Canvas canvas;
     private GameObject aboutPanel;
