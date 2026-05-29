@@ -49,6 +49,7 @@ public class OceanRhythmManager : MonoBehaviour
     public Sprite glowStarSprite;
     public Sprite waveRibbonSprite;
     public Sprite[] fishVariantSprites;
+    public Sprite[] littleFishAnimationSprites;
     public Sprite[] bucketDecorationSprites;
 
     [Header("Optional music")]
@@ -88,6 +89,7 @@ public class OceanRhythmManager : MonoBehaviour
     private int catchesSinceLastSingingShell;
     private bool singingShellAvailable;
     private bool firstSingingShellShown;
+    private Sprite[] cachedLittleFishAnimationFrames;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void RegisterSceneHook()
@@ -153,6 +155,49 @@ public class OceanRhythmManager : MonoBehaviour
         musicSource.playOnAwake = false;
         bucketInventory = new OceanBucketInventory();
     }
+
+#if UNITY_EDITOR
+    [ContextMenu("Rebuild Edit Mode Hierarchy")]
+    public void RebuildEditModeHierarchy()
+    {
+        if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            return;
+        }
+
+        EnsureCamera();
+        BuildLessons();
+        uiController = GetComponent<OceanRhythmUIController>();
+        if (uiController == null)
+        {
+            uiController = gameObject.AddComponent<OceanRhythmUIController>();
+        }
+
+        metronomeAudio = GetComponent<SimpleMetronomeAudio>();
+        if (metronomeAudio == null)
+        {
+            metronomeAudio = gameObject.AddComponent<SimpleMetronomeAudio>();
+        }
+
+        musicSource = GetComponent<AudioSource>();
+        if (musicSource == null)
+        {
+            musicSource = gameObject.AddComponent<AudioSource>();
+        }
+        musicSource.loop = true;
+        musicSource.playOnAwake = false;
+
+        bucketInventory = new OceanBucketInventory();
+        pondAnimals.Clear();
+        uiController.Build(this);
+        uiController.ShowFreePond(lessons, pondAnimals, 2);
+        uiController.UpdateBucket(bucketInventory);
+        uiController.SetSingingShellAvailable(false);
+
+        UnityEditor.EditorUtility.SetDirty(this);
+        UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(gameObject.scene);
+    }
+#endif
 
     private void Start()
     {
@@ -295,6 +340,12 @@ public class OceanRhythmManager : MonoBehaviour
 
         if (lesson.animalKey == "Fish")
         {
+            Sprite firstAnimationFrame = GetFirstSprite(GetAnimationFramesForLesson(lesson));
+            if (firstAnimationFrame != null)
+            {
+                return firstAnimationFrame;
+            }
+
             return fishSprite;
         }
         if (lesson.animalKey == "Octopus")
@@ -310,6 +361,88 @@ public class OceanRhythmManager : MonoBehaviour
             return mysteryFishSprite;
         }
         return jellyfishSprite;
+    }
+
+    public Sprite[] GetAnimationFramesForLesson(OceanLesson lesson)
+    {
+        if (lesson != null && lesson.fishType == OceanFishType.Fish)
+        {
+            if (cachedLittleFishAnimationFrames == null)
+            {
+                cachedLittleFishAnimationFrames = BuildSpriteSheetFrames(littleFishAnimationSprites);
+            }
+
+            return cachedLittleFishAnimationFrames;
+        }
+
+        return null;
+    }
+
+    private Sprite[] BuildSpriteSheetFrames(Sprite[] sheets)
+    {
+        if (sheets == null)
+        {
+            return null;
+        }
+
+        List<Sprite> frames = new List<Sprite>();
+        for (int i = 0; i < sheets.Length; i++)
+        {
+            Sprite source = sheets[i];
+            if (source == null || source.texture == null)
+            {
+                continue;
+            }
+
+            Rect sourceRect = source.rect;
+            int columns;
+            int rows;
+            GetSpriteSheetGrid(sourceRect, out columns, out rows);
+            float frameWidth = sourceRect.width / columns;
+            float frameHeight = sourceRect.height / rows;
+            for (int row = rows - 1; row >= 0; row--)
+            {
+                for (int column = 0; column < columns; column++)
+                {
+                    Rect frameRect = new Rect(sourceRect.x + column * frameWidth, sourceRect.y + row * frameHeight, frameWidth, frameHeight);
+                    frames.Add(Sprite.Create(source.texture, frameRect, new Vector2(0.5f, 0.5f), source.pixelsPerUnit));
+                }
+            }
+        }
+
+        return frames.Count > 0 ? frames.ToArray() : null;
+    }
+
+    private void GetSpriteSheetGrid(Rect sourceRect, out int columns, out int rows)
+    {
+        if (Mathf.Approximately(sourceRect.width, sourceRect.height) && sourceRect.width >= 128f)
+        {
+            columns = 2;
+            rows = 2;
+            return;
+        }
+
+        float frameSize = Mathf.Min(sourceRect.width, sourceRect.height);
+        columns = Mathf.Max(1, Mathf.RoundToInt(sourceRect.width / frameSize));
+        rows = Mathf.Max(1, Mathf.RoundToInt(sourceRect.height / frameSize));
+    }
+
+    private Sprite GetFirstSprite(Sprite[] sprites)
+    {
+        if (sprites == null)
+        {
+            return null;
+        }
+
+        for (int i = 0; i < sprites.Length; i++)
+        {
+            if (sprites[i] != null)
+            {
+                return sprites[i];
+            }
+        }
+
+        return null;
     }
 
     public Sprite GetWaterBackgroundSprite()

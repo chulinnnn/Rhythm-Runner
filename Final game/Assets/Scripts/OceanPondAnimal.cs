@@ -26,6 +26,7 @@ public class OceanPondAnimal : MonoBehaviour
 
     private RectTransform rectTransform;
     private Image animalImage;
+    private OceanSpriteAnimator spriteAnimator;
     private Text nameText;
     private Text meterText;
     private Text remainingText;
@@ -45,10 +46,15 @@ public class OceanPondAnimal : MonoBehaviour
 
     public void Build(OceanLesson lesson, Sprite animalSprite, Sprite bubbleSprite, Font font, Color fallbackColor, Vector2 startPosition)
     {
-        Build(lesson, animalSprite, bubbleSprite, font, fallbackColor, startPosition, lesson.animalKey);
+        Build(lesson, animalSprite, null, bubbleSprite, font, fallbackColor, startPosition, lesson.animalKey);
     }
 
     public void Build(OceanLesson lesson, Sprite animalSprite, Sprite bubbleSprite, Font font, Color fallbackColor, Vector2 startPosition, string instanceId)
+    {
+        Build(lesson, animalSprite, null, bubbleSprite, font, fallbackColor, startPosition, instanceId);
+    }
+
+    public void Build(OceanLesson lesson, Sprite animalSprite, Sprite[] animationFrames, Sprite bubbleSprite, Font font, Color fallbackColor, Vector2 startPosition, string instanceId)
     {
         Lesson = lesson;
         InstanceId = instanceId;
@@ -60,8 +66,17 @@ public class OceanPondAnimal : MonoBehaviour
 
         animalImage = gameObject.AddComponent<Image>();
         animalImage.sprite = animalSprite != null ? animalSprite : bubbleSprite;
-        animalImage.color = fallbackColor;
+        animalImage.color = animalSprite != null || HasAnimationFrames(animationFrames) ? Color.white : fallbackColor;
         animalImage.preserveAspect = true;
+        spriteAnimator = gameObject.AddComponent<OceanSpriteAnimator>();
+        if (HasAnimationFrames(animationFrames))
+        {
+            spriteAnimator.SetFrames(animationFrames, Random.Range(5.5f, 7.5f));
+        }
+        else
+        {
+            spriteAnimator.enabled = false;
+        }
 
         string displayName = IsMystery ? "?" : lesson.animalName;
         nameText = CreateText("Name", displayName, font, new Vector2(0.5f, 0.5f), new Vector2(0f, 8f), new Vector2(160f, 40f), 22, FontStyle.Bold, new Color(0.02f, 0.16f, 0.24f));
@@ -317,6 +332,24 @@ public class OceanPondAnimal : MonoBehaviour
             remainingText.text = "";
             remainingText.gameObject.SetActive(false);
         }
+    }
+
+    private bool HasAnimationFrames(Sprite[] animationFrames)
+    {
+        if (animationFrames == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < animationFrames.Length; i++)
+        {
+            if (animationFrames[i] != null)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private Text CreateText(string name, string value, Font font, Vector2 anchor, Vector2 position, Vector2 size, int fontSize, FontStyle style, Color color)

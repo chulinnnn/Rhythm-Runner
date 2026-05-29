@@ -5,6 +5,7 @@ public class OceanAnimalController : MonoBehaviour
 {
     private RectTransform rectTransform;
     private Image animalImage;
+    private OceanSpriteAnimator spriteAnimator;
     private Text fallbackLabel;
     private Vector2 basePosition;
     private float bounceScale = 1f;
@@ -19,6 +20,8 @@ public class OceanAnimalController : MonoBehaviour
         animalImage.sprite = fallbackSprite;
         animalImage.color = new Color(1f, 0.72f, 0.2f);
         animalImage.preserveAspect = true;
+        spriteAnimator = gameObject.AddComponent<OceanSpriteAnimator>();
+        spriteAnimator.enabled = false;
 
         GameObject labelObject = new GameObject("AnimalLabel", typeof(RectTransform));
         labelObject.transform.SetParent(transform, false);
@@ -41,20 +44,50 @@ public class OceanAnimalController : MonoBehaviour
 
     public void SetAnimal(string displayName, Sprite sprite, Color fallbackColor)
     {
+        SetAnimal(displayName, sprite, null, fallbackColor);
+    }
+
+    public void SetAnimal(string displayName, Sprite sprite, Sprite[] animationFrames, Color fallbackColor)
+    {
         captured = false;
         bounceScale = 1f;
         rectTransform.localScale = Vector3.one;
         rectTransform.anchoredPosition = basePosition;
-        animalImage.color = fallbackColor;
-        if (sprite != null)
+        bool hasVisual = sprite != null || HasAnimationFrames(animationFrames);
+        animalImage.color = hasVisual ? Color.white : fallbackColor;
+        if (HasAnimationFrames(animationFrames))
         {
-            animalImage.sprite = sprite;
+            spriteAnimator.SetFrames(animationFrames, 6f);
+            fallbackLabel.text = "";
+        }
+        else if (sprite != null)
+        {
+            spriteAnimator.StopOn(sprite);
             fallbackLabel.text = "";
         }
         else
         {
+            spriteAnimator.StopOn(animalImage.sprite);
             fallbackLabel.text = displayName;
         }
+    }
+
+    private bool HasAnimationFrames(Sprite[] animationFrames)
+    {
+        if (animationFrames == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < animationFrames.Length; i++)
+        {
+            if (animationFrames[i] != null)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public void Bounce(float accentedScale)

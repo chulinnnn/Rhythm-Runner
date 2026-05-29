@@ -5,6 +5,16 @@ using UnityEngine.UI;
 
 public class OceanRhythmUIController : MonoBehaviour
 {
+    private class ImageVisualOverride
+    {
+        public Sprite sprite;
+        public Color color;
+        public Material material;
+        public Image.Type type;
+        public bool preserveAspect;
+        public bool raycastTarget;
+    }
+
     private OceanRhythmManager manager;
     private Canvas canvas;
     private RectTransform rootRect;
@@ -68,6 +78,8 @@ public class OceanRhythmUIController : MonoBehaviour
     private OceanPondAnimal currentFreePondSelection;
     private bool showingGuidedLesson;
     private float tapPulseScale = 1f;
+    private readonly Dictionary<string, ImageVisualOverride> pendingImageOverrides = new Dictionary<string, ImageVisualOverride>();
+    private readonly Dictionary<string, ImageVisualOverride> pendingNameImageOverrides = new Dictionary<string, ImageVisualOverride>();
 
     public void Build(OceanRhythmManager owner)
     {
@@ -84,7 +96,13 @@ public class OceanRhythmUIController : MonoBehaviour
         GameObject existing = GameObject.Find("OceanRhythmCanvas");
         if (existing != null)
         {
-            Destroy(existing);
+            CaptureImageOverrides(existing.transform);
+            DestroyObject(existing);
+        }
+        else
+        {
+            pendingImageOverrides.Clear();
+            pendingNameImageOverrides.Clear();
         }
 
         GameObject canvasObject = new GameObject("OceanRhythmCanvas", typeof(RectTransform));
@@ -148,6 +166,7 @@ public class OceanRhythmUIController : MonoBehaviour
         beatInfoButton.SetActive(false);
         SetBucketButtonVisible(false);
         pondLayer.gameObject.SetActive(false);
+        ApplyPendingImageOverrides();
     }
 
     private void Update()
@@ -210,7 +229,7 @@ public class OceanRhythmUIController : MonoBehaviour
         if (animalController != null)
         {
             guidedAnimalRoot.gameObject.SetActive(true);
-            animalController.SetAnimal(lesson.animalName, manager != null ? manager.GetSpriteForLesson(lesson) : null, ColorForAnimal(lesson.animalKey));
+            animalController.SetAnimal(lesson.animalName, manager != null ? manager.GetSpriteForLesson(lesson) : null, manager != null ? manager.GetAnimationFramesForLesson(lesson) : null, ColorForAnimal(lesson.animalKey));
         }
 
         if (pondLayer != null)
@@ -416,9 +435,9 @@ public class OceanRhythmUIController : MonoBehaviour
             {
                 Vector2 position = positions[positionIndex % positions.Length];
                 positionIndex++;
-                GameObject obj = CreateRect(pondLayer, "Pond_" + lesson.animalKey + "_" + j, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), position, new Vector2(176f, 136f)).gameObject;
+                GameObject obj = CreateRect(pondLayer, "Pond_" + lesson.animalKey + "_" + j, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), position, new Vector2(300f, 300f)).gameObject;
                 OceanPondAnimal animal = obj.AddComponent<OceanPondAnimal>();
-                animal.Build(lesson, manager != null ? manager.GetSpriteForLesson(lesson) : null, circleSprite, uiFont, ColorForAnimal(lesson.animalKey), position, lesson.animalKey + "_" + j);
+                animal.Build(lesson, manager != null ? manager.GetSpriteForLesson(lesson) : null, manager != null ? manager.GetAnimationFramesForLesson(lesson) : null, circleSprite, uiFont, ColorForAnimal(lesson.animalKey), position, lesson.animalKey + "_" + j);
                 pondAnimals.Add(animal);
                 if (outputAnimals != null)
                 {
@@ -432,6 +451,8 @@ public class OceanRhythmUIController : MonoBehaviour
             netCursor.SetCaptureRatio(0f);
             netCursor.transform.SetAsLastSibling();
         }
+
+        ApplyPendingImageOverrides();
     }
 
     public OceanPondAnimal UpdateFreePondSelection()
@@ -626,7 +647,7 @@ public class OceanRhythmUIController : MonoBehaviour
         }
 
         Vector2 position = new Vector2(Random.Range(-430f, 430f), Random.Range(-90f, 135f));
-        GameObject obj = CreateRect(pondLayer, instanceId, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), position, new Vector2(182f, 142f)).gameObject;
+        GameObject obj = CreateRect(pondLayer, instanceId, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), position, new Vector2(300f, 300f)).gameObject;
         OceanPondAnimal animal = obj.AddComponent<OceanPondAnimal>();
         animal.Build(lesson, mysterySprite, circleSprite, uiFont, new Color(0.9f, 0.78f, 1f), position, instanceId);
         pondAnimals.Add(animal);
@@ -707,7 +728,7 @@ public class OceanRhythmUIController : MonoBehaviour
         {
             for (int i = optionsRoot.childCount - 1; i >= 0; i--)
             {
-                Destroy(optionsRoot.GetChild(i).gameObject);
+                DestroyObject(optionsRoot.GetChild(i).gameObject);
             }
 
             List<OceanLesson> options = BuildSoundMatchOptions(targetLesson, allLessons);
@@ -999,7 +1020,7 @@ public class OceanRhythmUIController : MonoBehaviour
 
         for (int i = lessonTargetBubbleRoot.childCount - 1; i >= 0; i--)
         {
-            Destroy(lessonTargetBubbleRoot.GetChild(i).gameObject);
+            DestroyObject(lessonTargetBubbleRoot.GetChild(i).gameObject);
         }
         lessonTargetBubbles.Clear();
 
@@ -1080,7 +1101,7 @@ public class OceanRhythmUIController : MonoBehaviour
 
         for (int i = beatBubbleRoot.childCount - 1; i >= 0; i--)
         {
-            Destroy(beatBubbleRoot.GetChild(i).gameObject);
+            DestroyObject(beatBubbleRoot.GetChild(i).gameObject);
         }
         beatBubbles.Clear();
 
@@ -1133,7 +1154,7 @@ public class OceanRhythmUIController : MonoBehaviour
 
     private void CreateCenterStage(Transform parent)
     {
-        GameObject animal = CreateRect(parent, "OceanAnimal", new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0f, 4f), new Vector2(270f, 230f)).gameObject;
+        GameObject animal = CreateRect(parent, "OceanAnimal", new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0f, 4f), new Vector2(300f, 300f)).gameObject;
         guidedAnimalRoot = animal.GetComponent<RectTransform>();
         animalController = animal.AddComponent<OceanAnimalController>();
         animalController.Build(circleSprite, uiFont);
@@ -1589,7 +1610,7 @@ public class OceanRhythmUIController : MonoBehaviour
 
         for (int i = decorationLibraryRoot.childCount - 1; i >= 0; i--)
         {
-            Destroy(decorationLibraryRoot.GetChild(i).gameObject);
+            DestroyObject(decorationLibraryRoot.GetChild(i).gameObject);
         }
 
         OceanDecorationReward[] decorations = OceanBucketInventory.GetAllDecorations();
@@ -1726,7 +1747,7 @@ public class OceanRhythmUIController : MonoBehaviour
 
         for (int i = content.childCount - 1; i >= 0; i--)
         {
-            Destroy(content.GetChild(i).gameObject);
+            DestroyObject(content.GetChild(i).gameObject);
         }
 
         VerticalLayoutGroup layout = content.gameObject.GetComponent<VerticalLayoutGroup>();
@@ -1956,7 +1977,7 @@ public class OceanRhythmUIController : MonoBehaviour
 
         for (int i = soundMatchBubbleRoot.childCount - 1; i >= 0; i--)
         {
-            Destroy(soundMatchBubbleRoot.GetChild(i).gameObject);
+            DestroyObject(soundMatchBubbleRoot.GetChild(i).gameObject);
         }
         soundMatchBubbles.Clear();
 
@@ -2033,10 +2054,134 @@ public class OceanRhythmUIController : MonoBehaviour
             Transform child = pondLayer.GetChild(i);
             if (child != null && child.name != "NetCursor")
             {
-                Destroy(child.gameObject);
+                DestroyObject(child.gameObject);
             }
         }
         pondAnimals.Clear();
+    }
+
+    private void DestroyObject(GameObject obj)
+    {
+        if (obj == null)
+        {
+            return;
+        }
+
+        if (Application.isPlaying)
+        {
+            Destroy(obj);
+        }
+        else
+        {
+            DestroyImmediate(obj);
+        }
+    }
+
+    private void CaptureImageOverrides(Transform root)
+    {
+        pendingImageOverrides.Clear();
+        pendingNameImageOverrides.Clear();
+
+        Image[] images = root.GetComponentsInChildren<Image>(true);
+        for (int i = 0; i < images.Length; i++)
+        {
+            Image image = images[i];
+            if (image == null)
+            {
+                continue;
+            }
+
+            ImageVisualOverride visual = new ImageVisualOverride();
+            visual.sprite = image.sprite;
+            visual.color = image.color;
+            visual.material = image.material;
+            visual.type = image.type;
+            visual.preserveAspect = image.preserveAspect;
+            visual.raycastTarget = image.raycastTarget;
+
+            pendingImageOverrides[IndexedPath(root, image.transform)] = visual;
+            pendingNameImageOverrides[NamePath(root, image.transform)] = visual;
+        }
+    }
+
+    private void ApplyPendingImageOverrides()
+    {
+        if (pendingImageOverrides.Count == 0 && pendingNameImageOverrides.Count == 0)
+        {
+            return;
+        }
+
+        if (canvas == null)
+        {
+            return;
+        }
+
+        Transform root = canvas.transform;
+        Image[] images = root.GetComponentsInChildren<Image>(true);
+        for (int i = 0; i < images.Length; i++)
+        {
+            Image image = images[i];
+            if (image == null)
+            {
+                continue;
+            }
+
+            ImageVisualOverride visual;
+            if (!pendingImageOverrides.TryGetValue(IndexedPath(root, image.transform), out visual)
+                && !pendingNameImageOverrides.TryGetValue(NamePath(root, image.transform), out visual))
+            {
+                continue;
+            }
+
+            image.sprite = visual.sprite;
+            image.color = visual.color;
+            image.material = visual.material;
+            image.type = visual.type;
+            image.preserveAspect = visual.preserveAspect;
+            image.raycastTarget = visual.raycastTarget;
+
+            OceanSpriteAnimator animator = image.GetComponent<OceanSpriteAnimator>();
+            if (animator != null && visual.sprite != null)
+            {
+                animator.StopOn(visual.sprite);
+            }
+        }
+    }
+
+    private string IndexedPath(Transform root, Transform target)
+    {
+        if (target == root)
+        {
+            return target.name;
+        }
+
+        string path = target.name + "#" + target.GetSiblingIndex();
+        Transform current = target.parent;
+        while (current != null && current != root)
+        {
+            path = current.name + "#" + current.GetSiblingIndex() + "/" + path;
+            current = current.parent;
+        }
+
+        return path;
+    }
+
+    private string NamePath(Transform root, Transform target)
+    {
+        if (target == root)
+        {
+            return target.name;
+        }
+
+        string path = target.name;
+        Transform current = target.parent;
+        while (current != null && current != root)
+        {
+            path = current.name + "/" + path;
+            current = current.parent;
+        }
+
+        return path;
     }
 
     private void CreateNavigation(Transform parent)

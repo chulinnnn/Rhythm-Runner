@@ -83,7 +83,7 @@ public class StartMenuController : MonoBehaviour
         GameObject existing = GameObject.Find("StartMenuCanvas");
         if (existing != null)
         {
-            Destroy(existing);
+            DestroyObject(existing);
         }
 
         GameObject canvasObj = new GameObject("StartMenuCanvas", typeof(RectTransform));
@@ -288,7 +288,7 @@ public class StartMenuController : MonoBehaviour
 
         for (int i = content.childCount - 1; i >= 0; i--)
         {
-            Destroy(content.GetChild(i).gameObject);
+            DestroyObject(content.GetChild(i).gameObject);
         }
 
         VerticalLayoutGroup layout = content.gameObject.GetComponent<VerticalLayoutGroup>();
@@ -444,6 +444,22 @@ public class StartMenuController : MonoBehaviour
         AudioListener.volume = PlayerPrefs.GetFloat(MasterVolumeKey, 0.85f);
     }
 
+#if UNITY_EDITOR
+    [ContextMenu("Rebuild Edit Mode Hierarchy")]
+    public void RebuildEditModeHierarchy()
+    {
+        if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            return;
+        }
+
+        ApplySavedSettings();
+        BuildMenu();
+        UnityEditor.EditorUtility.SetDirty(this);
+        UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(gameObject.scene);
+    }
+#endif
+
     private void QuitGame()
     {
 #if UNITY_EDITOR
@@ -526,6 +542,23 @@ public class StartMenuController : MonoBehaviour
         Image image = obj.AddComponent<Image>();
         image.color = color;
         return obj;
+    }
+
+    private void DestroyObject(GameObject obj)
+    {
+        if (obj == null)
+        {
+            return;
+        }
+
+        if (Application.isPlaying)
+        {
+            Destroy(obj);
+        }
+        else
+        {
+            DestroyImmediate(obj);
+        }
     }
 
     private RectTransform CreateRect(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 anchoredPosition, Vector2 sizeDelta)
