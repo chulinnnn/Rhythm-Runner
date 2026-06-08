@@ -9,18 +9,12 @@ EditorBuildSettings:
     path: Assets/Scenes/Start.unity
     guid: 141a25c9cbaaec24982f7f713e4a774f
   - enabled: 1
-    path: Assets/Scenes/Game.unity
-    guid: 3edb4d92c44c217468085997ab922df4
-  - enabled: 1
-    path: Assets/Scenes/Game2.unity
-    guid: 3acaf4eed52592943a4bf19ca8766377
-  - enabled: 1
-    path: Assets/Scenes/AdvancedTutorial.unity
-    guid: a7f3a352ce0a4af3b9e5e5028bce1d31
-  - enabled: 1
-    path: Assets/Scenes/Tutorial.unity
-    guid: eeb7e503855b56e4dab886859bba0137
+    path: Assets/Scenes/VerticalRunner.unity
+    guid: 7a2c03707b12439ab22b833304aeecd7
   - enabled: 1
     path: Assets/Scenes/OceanRhythm.unity
     guid: bd9e57d60ac1469a9fa65d04875e0c39
+  - enabled: 1
+    path: Assets/Scenes/AdvancedRunner.unity
+    guid: b4e6d874bbe943cca0bdd05a77af0d3e
   m_configObjects: {}
