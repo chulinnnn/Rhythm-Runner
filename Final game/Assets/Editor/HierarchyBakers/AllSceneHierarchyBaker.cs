@@ -16,6 +16,8 @@ public static class AllSceneHierarchyBaker
         RebuildOceanScene();
         RebuildVerticalScene("Assets/Scenes/VerticalRunner.unity", VerticalRunnerMode.Tutorial);
         RebuildAdvancedScene("Assets/Scenes/AdvancedRunner.unity", AdvancedRunnerMode.Game);
+        RebuildWorldMusicExplorerScene();
+        EnsureBuildSettingsScene("Assets/Scenes/WorldMusicExplorer.unity");
 
         if (!string.IsNullOrEmpty(originalScenePath))
         {
@@ -334,6 +336,7 @@ public static class AllSceneHierarchyBaker
         controller.littleRhythmSceneName = "OceanRhythm";
         controller.runnerSceneName = "VerticalRunner";
         controller.advancedRunnerSceneName = "AdvancedRunner";
+        controller.worldMusicSceneName = "WorldMusicExplorer";
         ConfigurePolicy(controller.scenePolicy, "StartMenuRuntime", false);
 
         GameObject canvas = EnsureCanvasRoot("StartMenuCanvas", 120);
@@ -343,13 +346,24 @@ public static class AllSceneHierarchyBaker
         EnsureText(root.transform, "Title", "Beat Bunny", new Vector2(0.5f, 1f), new Vector2(0f, -82f), new Vector2(840f, 82f), 58, FontStyle.Bold, Color.white);
         EnsureText(root.transform, "Subtitle", "Choose a rhythm path", new Vector2(0.5f, 1f), new Vector2(0f, -142f), new Vector2(840f, 40f), 26, FontStyle.Normal, new Color(0.95f, 1f, 0.82f));
 
-        GameObject modeRow = EnsureRect(root.transform, "ModeRow", new Vector2(0.5f, 0.52f), Vector2.zero, new Vector2(1040f, 290f));
-        HorizontalLayoutGroup modeLayout = EnsureLayout(modeRow, 28f, TextAnchor.MiddleCenter);
-        modeLayout.childControlWidth = false;
-        modeLayout.childControlHeight = false;
-        EnsureModeCard(modeRow.transform, "LittleRhythmOceanCard", "Rhythm Ocean", "Under 5", "Move the net. Tap with the bright bubble.", new Color(0.12f, 0.68f, 0.85f));
-        EnsureModeCard(modeRow.transform, "RhythmRunnerCard", "Jumping follow the rhythm", "Age 5-10", "Bounce upward with rhythm.", new Color(1f, 0.64f, 0.2f));
-        EnsureModeCard(modeRow.transform, "AdvancedRunnerCard", "Advanced Runner", "Challenge", "Read lane and action together.", new Color(0.42f, 0.78f, 0.34f));
+        GameObject modeRow = EnsureRect(root.transform, "ModeRow", new Vector2(0.5f, 0.52f), Vector2.zero, new Vector2(1360f, 290f));
+        RemoveHorizontalLayout(modeRow);
+        if (EnsureMissingModeCard(modeRow.transform, "LittleRhythmOceanCard", "Rhythm Ocean", "Under 5", "Move the net. Tap with the bright bubble.", new Color(0.12f, 0.68f, 0.85f)))
+        {
+            SetModeCardDefaultPosition(modeRow.transform, "LittleRhythmOceanCard", new Vector2(-510f, 0f));
+        }
+        if (EnsureMissingModeCard(modeRow.transform, "RhythmRunnerCard", "Jumping follow the rhythm", "Age 5-10", "Bounce upward with rhythm.", new Color(1f, 0.64f, 0.2f)))
+        {
+            SetModeCardDefaultPosition(modeRow.transform, "RhythmRunnerCard", new Vector2(-170f, 0f));
+        }
+        if (EnsureMissingModeCard(modeRow.transform, "AdvancedRunnerCard", "Advanced Runner", "Challenge", "Read lane and action together.", new Color(0.42f, 0.78f, 0.34f)))
+        {
+            SetModeCardDefaultPosition(modeRow.transform, "AdvancedRunnerCard", new Vector2(170f, 0f));
+        }
+        if (EnsureMissingModeCard(modeRow.transform, "WorldMusicExplorerCard", "123", "123", "123", new Color(0.78f, 0.42f, 0.88f)))
+        {
+            SetModeCardDefaultPosition(modeRow.transform, "WorldMusicExplorerCard", new Vector2(510f, 0f));
+        }
 
         GameObject utility = EnsureRect(root.transform, "UtilityBar", new Vector2(0.5f, 0f), new Vector2(0f, 58f), new Vector2(760f, 58f));
         HorizontalLayoutGroup utilityLayout = EnsureLayout(utility, 20f, TextAnchor.MiddleCenter);
@@ -366,6 +380,43 @@ public static class AllSceneHierarchyBaker
         EnsureCamera();
         EnsureEventSystem();
         Save(scene);
+    }
+
+    [MenuItem("Tools/Rhythm Runner/Rebuild World Music Explorer Hierarchy")]
+    public static void RebuildWorldMusicExplorerScene()
+    {
+        const string scenePath = "Assets/Scenes/WorldMusicExplorer.unity";
+        Scene scene = System.IO.File.Exists(scenePath)
+            ? EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single)
+            : EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+        WorldMusicExplorerController controller = Object.FindObjectOfType<WorldMusicExplorerController>(true);
+        if (controller == null)
+        {
+            controller = new GameObject("WorldMusicExplorerController").AddComponent<WorldMusicExplorerController>();
+        }
+
+        controller.explorerSceneName = "WorldMusicExplorer";
+        controller.startSceneName = "Start";
+
+        GameObject canvas = EnsureCanvasRoot("WorldMusicExplorerCanvas", 130);
+        GameObject root = EnsureFullscreenRect(canvas.transform, "Root");
+        EnsureMissingImage(root, new Color(0.07f, 0.08f, 0.15f, 1f));
+        EnsureOptionalButton(root.transform, "BackButton", "Back", new Vector2(0f, 1f), new Vector2(72f, -46f), new Vector2(120f, 48f));
+        EnsureMissingText(root.transform, "NowPlaying", "123", new Vector2(0.5f, 0.88f), Vector2.zero, new Vector2(820f, 86f), 32, FontStyle.Bold, Color.white);
+        EnsureMissingText(root.transform, "HintText", "Press any key to explore music.", new Vector2(0.5f, 0.12f), Vector2.zero, new Vector2(760f, 48f), 22, FontStyle.Bold, new Color(1f, 0.94f, 0.68f));
+
+        GameObject content = EnsureCanvasRoot("WorldMusicExplorerContent", 125);
+        GameObject items = EnsureMissingRect(content.transform, "Items", Vector2.zero, Vector2.zero, Vector2.zero);
+        EnsureWorldMusicItem(items.transform, "Item_RegionName");
+
+        EnsureCamera();
+        EnsureEventSystem();
+
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene, scenePath);
+        EnsureBuildSettingsScene(scenePath);
+        AssetDatabase.SaveAssets();
     }
 
     public static void EnsureStartMusicDecorations(Transform root)
@@ -396,6 +447,26 @@ public static class AllSceneHierarchyBaker
         EnsureMissingRect(music.transform, "Templates", Vector2.zero, Vector2.zero, Vector2.zero);
         EnsureMissingRect(music.transform, "StaffLines", Vector2.zero, Vector2.zero, Vector2.zero);
         EnsureMissingRect(music.transform, "Runtime", Vector2.zero, Vector2.zero, Vector2.zero);
+    }
+
+    public static void EnsureStartWorldMusicExplorerEntry(Transform root, StartMenuController controller)
+    {
+        if (controller != null)
+        {
+            controller.worldMusicSceneName = "WorldMusicExplorer";
+        }
+
+        if (root == null)
+        {
+            return;
+        }
+
+        GameObject modeRow = EnsureMissingRect(root, "ModeRow", new Vector2(0.5f, 0.52f), Vector2.zero, new Vector2(1360f, 290f));
+        RemoveHorizontalLayout(modeRow);
+        if (EnsureMissingModeCard(modeRow.transform, "WorldMusicExplorerCard", "123", "123", "123", new Color(0.78f, 0.42f, 0.88f)))
+        {
+            SetModeCardDefaultPosition(modeRow.transform, "WorldMusicExplorerCard", new Vector2(510f, 0f));
+        }
     }
 
     private static void RebuildOceanScene()
@@ -1465,43 +1536,170 @@ public static class AllSceneHierarchyBaker
         if (card.GetComponent<Button>() == null) card.AddComponent<Button>().targetGraphic = card.GetComponent<Image>();
     }
 
+    private static bool EnsureMissingModeCard(Transform parent, string name, string title, string badge, string body, Color color)
+    {
+        Transform existing = parent.Find(name);
+        if (existing == null)
+        {
+            EnsureModeCard(parent, name, title, badge, body, color);
+            return true;
+        }
+
+        Button button = existing.GetComponent<Button>();
+        if (button == null)
+        {
+            button = existing.gameObject.AddComponent<Button>();
+            Graphic graphic = existing.GetComponent<Graphic>();
+            if (graphic != null)
+            {
+                button.targetGraphic = graphic;
+            }
+        }
+        return false;
+    }
+
+    private static void SetModeCardDefaultPosition(Transform parent, string name, Vector2 position)
+    {
+        Transform child = parent.Find(name);
+        if (child == null)
+        {
+            return;
+        }
+
+        RectTransform rect = child.GetComponent<RectTransform>();
+        if (rect == null)
+        {
+            return;
+        }
+
+        rect.anchoredPosition = position;
+    }
+
+    private static void RemoveHorizontalLayout(GameObject obj)
+    {
+        HorizontalLayoutGroup layout = obj.GetComponent<HorizontalLayoutGroup>();
+        if (layout == null)
+        {
+            return;
+        }
+
+        Object.DestroyImmediate(layout);
+    }
+
+    private static void EnsureWorldMusicItem(Transform parent, string name)
+    {
+        GameObject item = EnsureMissingRect(parent, name, Vector2.zero, Vector2.zero, Vector2.zero);
+        GameObject music = EnsureMissingRect(item.transform, "Music", Vector2.zero, Vector2.zero, Vector2.zero);
+        AudioSource source = music.GetComponent<AudioSource>();
+        if (source == null)
+        {
+            source = music.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.loop = true;
+        }
+
+        GameObject visualRoot = EnsureMissingRect(item.transform, "VisualRoot", Vector2.zero, Vector2.zero, Vector2.zero);
+        RectTransform visualRect = visualRoot.GetComponent<RectTransform>();
+        if (visualRect != null)
+        {
+            visualRect.anchorMin = Vector2.zero;
+            visualRect.anchorMax = Vector2.one;
+            visualRect.anchoredPosition = Vector2.zero;
+            visualRect.sizeDelta = Vector2.zero;
+        }
+        CanvasGroup group = visualRoot.GetComponent<CanvasGroup>();
+        if (group == null)
+        {
+            group = visualRoot.AddComponent<CanvasGroup>();
+            group.alpha = 1f;
+        }
+        group.interactable = false;
+        group.blocksRaycasts = false;
+
+        EnsureWorldMusicVisualLayer(visualRoot.transform, "Background", new Vector2(0.5f, 0.5f), new Vector2(1200f, 650f), new Color(0.18f, 0.22f, 0.36f, 1f));
+        EnsureWorldMusicVisualLayer(visualRoot.transform, "Pattern", new Vector2(0.5f, 0.5f), new Vector2(920f, 420f), new Color(1f, 1f, 1f, 0.16f));
+        EnsureWorldMusicVisualLayer(visualRoot.transform, "Landmark", new Vector2(0.5f, 0.46f), new Vector2(520f, 300f), new Color(1f, 1f, 1f, 0.38f));
+        EnsureWorldMusicVisualLayer(visualRoot.transform, "Instrument", new Vector2(0.5f, 0.32f), new Vector2(240f, 180f), new Color(1f, 0.94f, 0.68f, 0.55f));
+        EnsureWorldMusicVisualLayer(visualRoot.transform, "Foreground", new Vector2(0.5f, 0.12f), new Vector2(1280f, 120f), new Color(0f, 0f, 0f, 0.18f));
+
+        EnsureMissingText(item.transform, "Label", "123", new Vector2(0.5f, 0.78f), Vector2.zero, new Vector2(720f, 52f), 28, FontStyle.Bold, Color.white);
+        EnsureMissingText(item.transform, "Description", "123", new Vector2(0.5f, 0.69f), Vector2.zero, new Vector2(720f, 48f), 20, FontStyle.Normal, new Color(1f, 0.94f, 0.68f));
+    }
+
+    private static void EnsureWorldMusicVisualLayer(Transform parent, string name, Vector2 anchor, Vector2 size, Color color)
+    {
+        GameObject layer = EnsureMissingRect(parent, name, anchor, Vector2.zero, size);
+        Image image = EnsureMissingImage(layer, color);
+        image.raycastTarget = false;
+    }
+
     private static void EnsureStartPanel(Transform root, string name, string title, string body)
     {
-        GameObject overlay = EnsureFullscreenPanel(root, name, new Color(0f, 0f, 0f, 0.55f));
-        GameObject card = EnsurePanel(overlay.transform, "Card", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(820f, 480f), new Color(0.05f, 0.29f, 0.42f, 0.98f));
-        EnsureText(card.transform, "Title", title, new Vector2(0.5f, 0.84f), Vector2.zero, new Vector2(700f, 60f), 42, FontStyle.Bold, Color.white);
-        EnsureText(card.transform, "Body", body, new Vector2(0.5f, 0.52f), Vector2.zero, new Vector2(700f, 230f), 24, FontStyle.Normal, Color.white);
-        EnsureRect(card.transform, name == "RecordsPanel" ? "RecordsContent" : "Content", new Vector2(0.5f, 0.52f), Vector2.zero, new Vector2(760f, 330f));
-        EnsureButton(card.transform, "CloseButton", "Close", new Vector2(0.5f, 0.12f), Vector2.zero, new Vector2(190f, 50f));
-        overlay.SetActive(false);
+        bool overlayCreated = root.Find(name) == null;
+        GameObject overlay = EnsureFullscreenMissingPanel(root, name, new Color(0f, 0f, 0f, 0.55f));
+        bool cardCreated = overlay.transform.Find("Card") == null;
+        GameObject card = EnsureMissingPanel(overlay.transform, "Card", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(820f, 480f), new Color(0.05f, 0.29f, 0.42f, 0.98f));
+        EnsureMissingText(card.transform, "Title", title, new Vector2(0.5f, 0.84f), Vector2.zero, new Vector2(700f, 60f), 42, FontStyle.Bold, Color.white);
+        if (!string.IsNullOrEmpty(body))
+        {
+            EnsureMissingText(card.transform, "Body", body, new Vector2(0.5f, 0.52f), Vector2.zero, new Vector2(700f, 230f), 24, FontStyle.Normal, Color.white);
+        }
+
+        if (name == "RecordsPanel")
+        {
+            GameObject content = EnsureMissingRect(card.transform, "RecordsContent", new Vector2(0.5f, 0.52f), Vector2.zero, new Vector2(760f, 330f));
+            EnsureStartRecordTemplates(content.transform);
+        }
+        else if (name != "SettingsPanel")
+        {
+            EnsureMissingRect(card.transform, "Content", new Vector2(0.5f, 0.52f), Vector2.zero, new Vector2(760f, 330f));
+        }
+
+        EnsureOptionalButton(card.transform, "CloseButton", "Close", new Vector2(0.5f, 0.12f), Vector2.zero, new Vector2(190f, 50f));
+        if (overlayCreated || cardCreated)
+        {
+            overlay.SetActive(false);
+        }
     }
 
     private static void EnsureSettingsPanel(Transform root)
     {
         EnsureStartPanel(root, "SettingsPanel", "Settings", "");
         Transform card = root.Find("SettingsPanel/Card");
-        GameObject content = EnsureRect(card, "SettingsContent", new Vector2(0.5f, 0.52f), Vector2.zero, new Vector2(760f, 330f));
-        EnsureSettingRow(content.transform, "MasterVolumeRow", true);
-        EnsureSettingRow(content.transform, "BeatVisualAssistRow", false);
-        EnsureSettingRow(content.transform, "VisualAssistStrengthRow", true);
+        if (card == null)
+        {
+            return;
+        }
+
+        GameObject content = EnsureMissingRect(card, "SettingsContent", new Vector2(0.5f, 0.52f), Vector2.zero, new Vector2(760f, 330f));
+        EnsureSettingRow(content.transform, "MasterVolumeRow", "Master Volume", true);
     }
 
-    private static void EnsureSettingRow(Transform parent, string name, bool slider)
+    private static void EnsureSettingRow(Transform parent, string name, string label, bool slider)
     {
-        GameObject row = EnsureRect(parent, name, Vector2.zero, Vector2.zero, new Vector2(760f, 66f));
-        EnsureText(row.transform, "Label", name.Replace("Row", ""), new Vector2(0.18f, 0.5f), Vector2.zero, new Vector2(260f, 56f), 22, FontStyle.Bold, Color.white);
+        GameObject row = EnsureMissingRect(parent, name, Vector2.zero, Vector2.zero, new Vector2(760f, 66f));
+        EnsureMissingText(row.transform, "Label", label, new Vector2(0.18f, 0.5f), Vector2.zero, new Vector2(260f, 56f), 22, FontStyle.Bold, Color.white);
         if (slider)
         {
-            GameObject sliderObj = EnsurePanel(row.transform, "Slider", new Vector2(0.68f, 0.5f), Vector2.zero, new Vector2(420f, 40f), new Color(1f, 1f, 1f, 0.25f));
-            if (sliderObj.GetComponent<Slider>() == null) sliderObj.AddComponent<Slider>();
-            EnsureRect(sliderObj.transform, "FillArea", Vector2.zero, Vector2.zero, new Vector2(400f, 30f));
-            EnsureImage(EnsureRect(sliderObj.transform, "Handle", new Vector2(0f, 0.5f), Vector2.zero, new Vector2(32f, 48f)), Color.white);
+            GameObject sliderObj = EnsureMissingPanel(row.transform, "Slider", new Vector2(0.68f, 0.5f), Vector2.zero, new Vector2(420f, 40f), new Color(1f, 1f, 1f, 0.25f));
+            if (sliderObj.GetComponent<Slider>() == null)
+            {
+                sliderObj.AddComponent<Slider>();
+            }
+            EnsureMissingRect(sliderObj.transform, "FillArea", Vector2.zero, Vector2.zero, new Vector2(400f, 30f));
+            EnsureMissingImage(EnsureMissingRect(sliderObj.transform, "Handle", new Vector2(0f, 0.5f), Vector2.zero, new Vector2(32f, 48f)), Color.white);
         }
-        else
-        {
-            GameObject toggle = EnsurePanel(row.transform, "Toggle", new Vector2(0.82f, 0.5f), Vector2.zero, new Vector2(84f, 42f), new Color(0.32f, 0.82f, 0.38f));
-            if (toggle.GetComponent<Toggle>() == null) toggle.AddComponent<Toggle>();
-        }
+    }
+
+    private static void EnsureStartRecordTemplates(Transform content)
+    {
+        GameObject section = EnsureMissingRect(content, "SectionTemplate", Vector2.zero, Vector2.zero, new Vector2(760f, 38f));
+        EnsureMissingText(section.transform, "Value", "Section", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720f, 34f), 27, FontStyle.Bold, new Color(1f, 0.9f, 0.52f));
+        section.SetActive(false);
+
+        GameObject item = EnsureMissingRect(content, "RecordItemTemplate", Vector2.zero, Vector2.zero, new Vector2(760f, 34f));
+        EnsureMissingText(item.transform, "Value", "0", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720f, 30f), 23, FontStyle.Normal, Color.white);
+        item.SetActive(false);
     }
 
     private static GameObject EnsureCanvasRoot(string name, int sortingOrder)
@@ -2021,5 +2219,25 @@ public static class AllSceneHierarchyBaker
     {
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
+    }
+
+    private static void EnsureBuildSettingsScene(string scenePath)
+    {
+        List<EditorBuildSettingsScene> scenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
+        for (int i = 0; i < scenes.Count; i++)
+        {
+            if (scenes[i].path == scenePath)
+            {
+                if (!scenes[i].enabled)
+                {
+                    scenes[i].enabled = true;
+                    EditorBuildSettings.scenes = scenes.ToArray();
+                }
+                return;
+            }
+        }
+
+        scenes.Add(new EditorBuildSettingsScene(scenePath, true));
+        EditorBuildSettings.scenes = scenes.ToArray();
     }
 }

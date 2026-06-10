@@ -17,4 +17,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/AdvancedRunner.unity
     guid: b4e6d874bbe943cca0bdd05a77af0d3e
+  - enabled: 1
+    path: Assets/Scenes/WorldMusicExplorer.unity
+    guid: b21cc539889141d9a0b69d86be65ed1c
   m_configObjects: {}

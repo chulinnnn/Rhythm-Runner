@@ -39,6 +39,7 @@ public static class SceneHierarchyBaker
         GameObject canvas = GameObject.Find("StartMenuCanvas");
         Transform root = canvas != null ? canvas.transform.Find("Root") : null;
         AllSceneHierarchyBaker.EnsureStartMusicDecorations(root);
+        AllSceneHierarchyBaker.EnsureStartWorldMusicExplorerEntry(root, controller);
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
     }
