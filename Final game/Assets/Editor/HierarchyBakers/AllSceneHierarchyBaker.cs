@@ -1066,6 +1066,7 @@ public static class AllSceneHierarchyBaker
         EnsureEditableText(beat.transform, "Label", "BEAT", new Vector2(0.48f, 0.5f), Vector2.zero, new Vector2(58f, 26f), 13, FontStyle.Bold, Color.white);
         EnsureEditableText(beat.transform, "Value", "0.00", new Vector2(0.82f, 0.5f), Vector2.zero, new Vector2(42f, 26f), 14, FontStyle.Bold, new Color(1f, 0.86f, 0.18f));
         EnsureAdvancedBeatVisuals(beat.transform);
+        EnsureAdvancedControlRhythmPrompt(bottom.transform);
         GameObject progress = EnsureAdvancedTransparentPanel(bottom.transform, "Progress", new Vector2(0.5f, 0.18f), Vector2.zero, new Vector2(680f, 18f));
         Image fill = EnsureImage(EnsureRect(progress.transform, "Fill", Vector2.zero, Vector2.zero, new Vector2(680f, 18f)), new Color(0.2f, 0.9f, 1f, 1f));
         fill.type = Image.Type.Filled;
@@ -1824,6 +1825,24 @@ public static class AllSceneHierarchyBaker
     }
 
     private static void EnsureVerticalControlRhythmPrompt(Transform bottom)
+    {
+        GameObject prompt = EnsureMissingRect(bottom, "ControlRhythmPrompt", new Vector2(0.5f, 0.5f), new Vector2(260f, 0f), new Vector2(420f, 130f));
+        CanvasGroup group = prompt.GetComponent<CanvasGroup>();
+        if (group == null)
+        {
+            group = prompt.AddComponent<CanvasGroup>();
+            group.alpha = 0f;
+        }
+        group.interactable = false;
+        group.blocksRaycasts = false;
+
+        EnsureVerticalPromptColumn(prompt.transform, "SpaceColumn", "SpaceUp", "SpaceDown", new Vector2(0.125f, 0.5f));
+        EnsureVerticalPromptColumn(prompt.transform, "DownColumn", "DownUp", "DownDown", new Vector2(0.375f, 0.5f));
+        EnsureVerticalPromptColumn(prompt.transform, "LeftColumn", "LeftUp", "LeftDown", new Vector2(0.625f, 0.5f));
+        EnsureVerticalPromptColumn(prompt.transform, "RightColumn", "RightUp", "RightDown", new Vector2(0.875f, 0.5f));
+    }
+
+    private static void EnsureAdvancedControlRhythmPrompt(Transform bottom)
     {
         GameObject prompt = EnsureMissingRect(bottom, "ControlRhythmPrompt", new Vector2(0.5f, 0.5f), new Vector2(260f, 0f), new Vector2(420f, 130f));
         CanvasGroup group = prompt.GetComponent<CanvasGroup>();

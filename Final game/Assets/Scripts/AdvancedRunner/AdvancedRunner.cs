@@ -251,6 +251,15 @@ public class AdvancedBeatTarget
 // 这个类在运行时绑定它们，并接管音乐、谱面、判定、分数和结果流程。
 public partial class AdvancedRunnerManager
 {
+    private struct ControlPromptState
+    {
+        public bool show;
+        public bool spaceDown;
+        public bool downDown;
+        public bool leftDown;
+        public bool rightDown;
+    }
+
     private const string SceneName = "AdvancedRunner";
     private const int ActionBeatCycle = 4;
     private const int MinActionBeatSpacing = 1;
@@ -262,6 +271,9 @@ public partial class AdvancedRunnerManager
 
     [Header("Runtime scene policy")]
     public RuntimeScenePolicy scenePolicy = RuntimeScenePolicy.Defaults();
+
+    [Header("Visual Timing")]
+    public float visualBeatDelaySeconds = 0.15f;
 
     private readonly List<AdvancedBeatTarget> targets = new List<AdvancedBeatTarget>();
     private AdvancedRunnerPlayer player;
@@ -434,6 +446,10 @@ public partial class AdvancedRunnerManager
         {
             player.ResetToLane(1);
         }
+        if (ui != null)
+        {
+            ui.UpdateControlRhythmPrompt(false, false, false, false, false);
+        }
 
         UpdateUi();
     }
@@ -485,6 +501,13 @@ public partial class AdvancedRunnerManager
         }
 
         float beatPosition = GetBeatPosition();
+        float visualBeatPosition = GetVisualBeatPosition(beatPosition);
+        if (ui != null)
+        {
+            ControlPromptState prompt = ResolveControlPromptState(visualBeatPosition);
+            ui.UpdateControlRhythmPrompt(prompt.spaceDown, prompt.downDown, prompt.leftDown, prompt.rightDown, prompt.show);
+        }
+
         player.Tick();
         UpdateTargets(beatPosition);
         CheckLateTargets(beatPosition);
@@ -1453,6 +1476,7 @@ public partial class AdvancedRunnerManager
 
         if (mode == AdvancedRunnerMode.Tutorial)
         {
+            ui.UpdateControlRhythmPrompt(false, false, false, false, false);
             StartCoroutine(RestartTutorialStepRoutine());
             return;
         }
@@ -1507,6 +1531,7 @@ public partial class AdvancedRunnerManager
 
         runEnded = true;
         StopRhythmClock();
+        ui.UpdateControlRhythmPrompt(false, false, false, false, false);
         ui.ShowResult(completed, score, perfectCount, goodCount, missCount, maxCombo);
     }
 
@@ -1528,7 +1553,8 @@ public partial class AdvancedRunnerManager
         float progress = mode == AdvancedRunnerMode.Game
             ? Mathf.Clamp01(GetMusicPlaybackTime() / Mathf.Max(1f, settings.songDurationSeconds))
             : tutorialSteps == null || tutorialSteps.Length == 0 ? 0f : Mathf.Clamp01((tutorialStepIndex + tutorialStepProgress / Mathf.Max(1f, tutorialSteps[tutorialStepIndex].requiredHits)) / tutorialSteps.Length);
-        ui.UpdateStats(hearts, score, combo, maxCombo, progress, GetBeatPosition());
+        float beatPosition = GetBeatPosition();
+        ui.UpdateStats(hearts, score, combo, maxCombo, progress, GetVisualBeatPosition(beatPosition));
     }
 
     // Single source of gameplay timing: configured music playback seconds
@@ -1541,6 +1567,71 @@ public partial class AdvancedRunnerManager
     private float GetBeatPosition()
     {
         return GetMusicPlaybackTime() / BeatInterval;
+    }
+
+    private float GetVisualBeatPosition(float beatPosition)
+    {
+        return Mathf.Max(0f, beatPosition - Mathf.Max(0f, visualBeatDelaySeconds) / BeatInterval);
+    }
+
+    private ControlPromptState ResolveControlPromptState(float beatPosition)
+    {
+        ControlPromptState state = new ControlPromptState();
+        if (runEnded || waitingForStart)
+        {
+            return state;
+        }
+
+        state.show = true;
+        AdvancedBeatTarget target = GetVisualPromptTarget(beatPosition);
+        if (target == null)
+        {
+            return state;
+        }
+
+        switch (target.actionType)
+        {
+            case AdvancedActionType.Jump:
+            case AdvancedActionType.Coin:
+                state.spaceDown = true;
+                break;
+            case AdvancedActionType.Slide:
+                state.downDown = true;
+                break;
+            case AdvancedActionType.LaneLeft:
+                state.leftDown = true;
+                break;
+            case AdvancedActionType.LaneRight:
+                state.rightDown = true;
+                break;
+        }
+
+        return state;
+    }
+
+    private AdvancedBeatTarget GetVisualPromptTarget(float beatPosition)
+    {
+        int visualBeat = Mathf.FloorToInt(Mathf.Max(0f, beatPosition));
+        for (int i = 0; i < targets.Count; i++)
+        {
+            AdvancedBeatTarget target = targets[i];
+            if (target == null)
+            {
+                continue;
+            }
+
+            if (target.beatIndex == visualBeat)
+            {
+                return target;
+            }
+
+            if (target.beatIndex > visualBeat)
+            {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     // Cache the furthest observed AudioSource.time so the beat clock remains
@@ -2226,6 +2317,16 @@ public partial class AdvancedRunnerPlayer
 // 布局、图片、字体、尺寸都留给场景 Hierarchy 编辑。
 public partial class AdvancedRunnerUI
 {
+    private sealed class PromptColumn
+    {
+        public GameObject up;
+        public GameObject down;
+        public GameObject handUp;
+        public GameObject handDown;
+        public Transform scaleRoot;
+        public Vector3 defaultScale = Vector3.one;
+    }
+
     private AdvancedRunnerManager manager;
     private AdvancedRunnerSettings settings;
     private Font font;
@@ -2254,6 +2355,12 @@ public partial class AdvancedRunnerUI
     private Image beatPulseImage;
     private Color beatPulseBaseColor = Color.white;
     private Vector3 beatPulseBaseScale = Vector3.one;
+    private GameObject controlRhythmPrompt;
+    private CanvasGroup controlRhythmPromptGroup;
+    private readonly PromptColumn spacePrompt = new PromptColumn();
+    private readonly PromptColumn downPrompt = new PromptColumn();
+    private readonly PromptColumn leftPrompt = new PromptColumn();
+    private readonly PromptColumn rightPrompt = new PromptColumn();
     private GameObject tutorialOverlay;
     private GameObject gameRulesOverlay;
     private GameObject resultOverlay;
@@ -2346,6 +2453,7 @@ public partial class AdvancedRunnerUI
         beatText = FindText(existing.transform, "BottomHud/Beat");
         beatValueText = FindText(existing.transform, "BottomHud/Beat/Value");
         BindBeatVisuals(existing.transform);
+        EnsureControlRhythmPrompt(existing.transform);
         progressFill = FindImage(existing.transform, "BottomHud/Progress/Fill");
         tutorialOverlay = FindObject(existing.transform, "TutorialOverlay");
         gameRulesOverlay = FindObject(existing.transform, "GameRulesOverlay");
@@ -2400,6 +2508,7 @@ public partial class AdvancedRunnerUI
         {
             resultOverlay.SetActive(false);
         }
+        UpdateControlRhythmPrompt(false, false, false, false, false);
         return true;
     }
 
@@ -2424,6 +2533,150 @@ public partial class AdvancedRunnerUI
     {
         Transform child = FindTransform(root, path);
         return child != null ? child.GetComponent<Image>() : null;
+    }
+
+    private void EnsureControlRhythmPrompt(Transform root)
+    {
+        if (controlRhythmPrompt == null)
+        {
+            controlRhythmPrompt = FindObject(root, "BottomHud/ControlRhythmPrompt");
+        }
+        if (controlRhythmPrompt == null)
+        {
+            Transform bottom = FindTransform(root, "BottomHud");
+            if (bottom == null)
+            {
+                return;
+            }
+
+            controlRhythmPrompt = CreateUiRect(bottom, "ControlRhythmPrompt", new Vector2(0.5f, 0.5f), new Vector2(260f, 0f), new Vector2(420f, 130f)).gameObject;
+        }
+
+        controlRhythmPromptGroup = controlRhythmPrompt.GetComponent<CanvasGroup>();
+        if (controlRhythmPromptGroup == null)
+        {
+            controlRhythmPromptGroup = controlRhythmPrompt.AddComponent<CanvasGroup>();
+        }
+        controlRhythmPromptGroup.interactable = false;
+        controlRhythmPromptGroup.blocksRaycasts = false;
+
+        EnsurePromptColumn(controlRhythmPrompt.transform, "SpaceColumn", "SpaceUp", "SpaceDown", new Vector2(0.125f, 0.5f));
+        EnsurePromptColumn(controlRhythmPrompt.transform, "DownColumn", "DownUp", "DownDown", new Vector2(0.375f, 0.5f));
+        EnsurePromptColumn(controlRhythmPrompt.transform, "LeftColumn", "LeftUp", "LeftDown", new Vector2(0.625f, 0.5f));
+        EnsurePromptColumn(controlRhythmPrompt.transform, "RightColumn", "RightUp", "RightDown", new Vector2(0.875f, 0.5f));
+        CacheControlRhythmPrompt();
+    }
+
+    private void EnsurePromptColumn(Transform parent, string columnName, string upName, string downName, Vector2 anchor)
+    {
+        RectTransform column = EnsurePromptSlot(parent, columnName, anchor, Vector2.zero, new Vector2(86f, 96f));
+        RectTransform key = EnsurePromptSlot(column, "Key", new Vector2(0.5f, 0.68f), Vector2.zero, new Vector2(78f, 52f));
+        RectTransform hand = EnsurePromptSlot(column, "Hand", new Vector2(0.5f, 0.22f), Vector2.zero, new Vector2(54f, 42f));
+        EnsurePromptImageSlot(key, upName);
+        EnsurePromptImageSlot(key, downName);
+        EnsurePromptImageSlot(hand, "HandUp");
+        EnsurePromptImageSlot(hand, "HandDown");
+    }
+
+    private RectTransform EnsurePromptSlot(Transform parent, string name, Vector2 anchor, Vector2 position, Vector2 size)
+    {
+        Transform existing = parent != null ? parent.Find(name) : null;
+        if (existing != null)
+        {
+            RectTransform existingRect = existing.GetComponent<RectTransform>();
+            if (existingRect != null)
+            {
+                return existingRect;
+            }
+        }
+
+        return CreateUiRect(parent, name, anchor, position, size);
+    }
+
+    private void EnsurePromptImageSlot(Transform parent, string name)
+    {
+        Transform existing = parent != null ? parent.Find(name) : null;
+        GameObject slot = existing != null ? existing.gameObject : CreateUiRect(parent, name, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero).gameObject;
+        if (existing == null)
+        {
+            RectTransform rect = slot.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            slot.SetActive(false);
+        }
+
+        Image image = slot.GetComponent<Image>();
+        if (image == null)
+        {
+            image = slot.AddComponent<Image>();
+            image.preserveAspect = true;
+        }
+        image.raycastTarget = false;
+    }
+
+    private RectTransform CreateUiRect(Transform parent, string name, Vector2 anchor, Vector2 position, Vector2 size)
+    {
+        GameObject obj = new GameObject(name, typeof(RectTransform));
+        if (parent != null)
+        {
+            obj.transform.SetParent(parent, false);
+        }
+
+        RectTransform rect = obj.GetComponent<RectTransform>();
+        rect.anchorMin = anchor;
+        rect.anchorMax = anchor;
+        rect.anchoredPosition = position;
+        rect.sizeDelta = size;
+        return rect;
+    }
+
+    private void CacheControlRhythmPrompt()
+    {
+        if (controlRhythmPrompt == null)
+        {
+            return;
+        }
+
+        CachePromptColumn(spacePrompt, "SpaceColumn", "SpaceUp", "SpaceDown");
+        CachePromptColumn(downPrompt, "DownColumn", "DownUp", "DownDown");
+        CachePromptColumn(leftPrompt, "LeftColumn", "LeftUp", "LeftDown");
+        CachePromptColumn(rightPrompt, "RightColumn", "RightUp", "RightDown");
+    }
+
+    private void CachePromptColumn(PromptColumn column, string columnName, string upName, string downName)
+    {
+        if (column == null || controlRhythmPrompt == null)
+        {
+            return;
+        }
+
+        Transform root = controlRhythmPrompt.transform.Find(columnName);
+        column.scaleRoot = root;
+        column.defaultScale = root != null ? root.localScale : Vector3.one;
+        column.up = root != null ? FindObject(root, "Key/" + upName) : null;
+        column.down = root != null ? FindObject(root, "Key/" + downName) : null;
+        column.handUp = root != null ? FindObject(root, "Hand/HandUp") : null;
+        column.handDown = root != null ? FindObject(root, "Hand/HandDown") : null;
+        SetPromptSlotNonRaycast(column.up);
+        SetPromptSlotNonRaycast(column.down);
+        SetPromptSlotNonRaycast(column.handUp);
+        SetPromptSlotNonRaycast(column.handDown);
+    }
+
+    private void SetPromptSlotNonRaycast(GameObject obj)
+    {
+        if (obj == null)
+        {
+            return;
+        }
+
+        Image image = obj.GetComponent<Image>();
+        if (image != null)
+        {
+            image.raycastTarget = false;
+        }
     }
 
     private void BindBeatVisuals(Transform root)
@@ -2564,6 +2817,7 @@ public partial class AdvancedRunnerUI
 
     public void HideRunOverlays()
     {
+        UpdateControlRhythmPrompt(false, false, false, false, false);
         if (tutorialOverlay != null)
         {
             tutorialOverlay.SetActive(false);
@@ -2654,6 +2908,62 @@ public partial class AdvancedRunnerUI
         }
 
         UpdateBeatVisuals(beatPosition);
+    }
+
+    public void UpdateControlRhythmPrompt(bool spaceDown, bool downDown, bool leftDown, bool rightDown, bool visible)
+    {
+        if (controlRhythmPrompt == null)
+        {
+            return;
+        }
+
+        if (controlRhythmPrompt.activeSelf != visible)
+        {
+            controlRhythmPrompt.SetActive(visible);
+        }
+        if (controlRhythmPromptGroup != null)
+        {
+            controlRhythmPromptGroup.alpha = visible ? 1f : 0f;
+            controlRhythmPromptGroup.interactable = false;
+            controlRhythmPromptGroup.blocksRaycasts = false;
+        }
+
+        SetPromptColumnActive(spacePrompt, visible, spaceDown);
+        SetPromptColumnActive(downPrompt, visible, downDown);
+        SetPromptColumnActive(leftPrompt, visible, leftDown);
+        SetPromptColumnActive(rightPrompt, visible, rightDown);
+        ApplyPromptColumnScale(spacePrompt, visible && spaceDown);
+        ApplyPromptColumnScale(downPrompt, visible && downDown);
+        ApplyPromptColumnScale(leftPrompt, visible && leftDown);
+        ApplyPromptColumnScale(rightPrompt, visible && rightDown);
+    }
+
+    private void SetPromptColumnActive(PromptColumn column, bool visible, bool pressed)
+    {
+        SetActiveIfPresent(column.up, visible && !pressed);
+        SetActiveIfPresent(column.down, visible && pressed);
+        SetActiveIfPresent(column.handUp, visible && !pressed);
+        SetActiveIfPresent(column.handDown, visible && pressed);
+    }
+
+    private void ApplyPromptColumnScale(PromptColumn column, bool pressed)
+    {
+        if (column.scaleRoot == null)
+        {
+            return;
+        }
+
+        float targetScale = pressed ? 1.08f : 1f;
+        Vector3 baseScale = column.defaultScale == Vector3.zero ? Vector3.one : column.defaultScale;
+        column.scaleRoot.localScale = Vector3.Lerp(column.scaleRoot.localScale, baseScale * targetScale, Time.unscaledDeltaTime * 16f);
+    }
+
+    private void SetActiveIfPresent(GameObject obj, bool active)
+    {
+        if (obj != null && obj.activeSelf != active)
+        {
+            obj.SetActive(active);
+        }
     }
 
     // Four-dot beat display follows the same beat clock that drives targets and
