@@ -9,6 +9,15 @@ public enum OceanFishType
     Mystery
 }
 
+public enum OceanBeatCardId
+{
+    Intro,
+    FourFour,
+    ThreeFour,
+    TwoFour,
+    SixEight
+}
+
 public enum OceanDecorationReward
 {
     Seaweed,

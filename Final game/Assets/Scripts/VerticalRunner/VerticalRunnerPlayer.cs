@@ -22,6 +22,7 @@ public class VerticalRunnerPlayer : MonoBehaviour
     private int missedParrotBeat = -1;
 
     public VerticalRunnerPlatform CurrentPlatform { get { return currentPlatform; } }
+    public VerticalRunnerPlatform TargetPlatform { get { return targetPlatform; } }
 
     public void Build(VerticalRunnerManager manager, VerticalRunnerSettings settings, VerticalBeatSpawner spawner, Sprite circleSprite)
     {

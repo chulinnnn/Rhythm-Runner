@@ -7,6 +7,15 @@ public enum VerticalBranchChoice
     Right
 }
 
+public enum VerticalControlPromptCue
+{
+    None,
+    Space,
+    Down,
+    Left,
+    Right
+}
+
 public class VerticalRunnerPlatform : MonoBehaviour
 {
     public int beatIndex;

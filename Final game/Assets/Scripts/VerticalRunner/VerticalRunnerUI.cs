@@ -7,6 +7,16 @@ using UnityEngine.UI;
 
 public class VerticalRunnerUI : MonoBehaviour
 {
+    private sealed class PromptColumn
+    {
+        public GameObject up;
+        public GameObject down;
+        public GameObject handUp;
+        public GameObject handDown;
+        public Transform scaleRoot;
+        public Vector3 defaultScale = Vector3.one;
+    }
+
     private VerticalRunnerManager manager;
     [SerializeField] private Canvas canvas;
     private Font font;
@@ -33,9 +43,15 @@ public class VerticalRunnerUI : MonoBehaviour
     [SerializeField] private Text resultTitleText;
     [SerializeField] private Text resultStatsText;
     [SerializeField] private Image damageFlashImage;
+    [SerializeField] private GameObject controlRhythmPrompt;
     private readonly List<Image> beatDots = new List<Image>();
     private readonly List<GameObject> tutorialStepImages = new List<GameObject>();
     private GameObject tutorialImagesRoot;
+    private CanvasGroup controlRhythmPromptGroup;
+    private readonly PromptColumn spacePrompt = new PromptColumn();
+    private readonly PromptColumn downPrompt = new PromptColumn();
+    private readonly PromptColumn leftPrompt = new PromptColumn();
+    private readonly PromptColumn rightPrompt = new PromptColumn();
     private Sprite circleSprite;
     private bool beatVisualVisible = true;
     private float lastBeatPosition;
@@ -150,6 +166,7 @@ public class VerticalRunnerUI : MonoBehaviour
         progressFill = progressFill != null ? progressFill : FindImage(existing.transform, "BottomHud/Progress/Fill");
         progressText = progressText != null ? progressText : FindText(existing.transform, "BottomHud/ProgressText");
         beatLaneRoot = beatLaneRoot != null ? beatLaneRoot : FindTransform(existing.transform, "BottomHud/BeatLane");
+        EnsureControlRhythmPrompt(existing.transform);
         beatVisualToggleButton = beatVisualToggleButton != null ? beatVisualToggleButton : FindButton(existing.transform, "BottomHud/BeatVisualToggleButton");
         beatVisualToggleLabel = beatVisualToggleLabel != null ? beatVisualToggleLabel : FindText(existing.transform, "BottomHud/BeatVisualToggleButton/Text");
         resultOverlay = resultOverlay != null ? resultOverlay : FindObject(existing.transform, "VerticalRunnerResult");
@@ -172,6 +189,7 @@ public class VerticalRunnerUI : MonoBehaviour
         }
 
         CacheBeatDots();
+        CacheControlRhythmPrompt();
         CacheTutorialStepImages(existing.transform);
         ConfigureProgressFill();
         CacheMissDefaults();
@@ -229,6 +247,7 @@ public class VerticalRunnerUI : MonoBehaviour
             tutorialCompleteRulesOverlay.SetActive(false);
         }
         SetGameControlsVisible(false);
+        UpdateControlRhythmPrompt(false, false, false, false, false);
         return true;
     }
 
@@ -392,6 +411,140 @@ public class VerticalRunnerUI : MonoBehaviour
                 beatDots.Add(images[i]);
             }
         }
+    }
+
+    private void EnsureControlRhythmPrompt(Transform root)
+    {
+        if (controlRhythmPrompt == null)
+        {
+            controlRhythmPrompt = FindObject(root, "BottomHud/ControlRhythmPrompt");
+        }
+        if (controlRhythmPrompt == null)
+        {
+            Transform bottom = FindTransform(root, "BottomHud");
+            if (bottom == null)
+            {
+                return;
+            }
+
+            controlRhythmPrompt = CreateRect(bottom, "ControlRhythmPrompt", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(260f, 0f), new Vector2(420f, 130f)).gameObject;
+        }
+
+        EnsurePromptColumn(controlRhythmPrompt.transform, "SpaceColumn", "SpaceUp", "SpaceDown", new Vector2(0.125f, 0.5f));
+        EnsurePromptColumn(controlRhythmPrompt.transform, "DownColumn", "DownUp", "DownDown", new Vector2(0.375f, 0.5f));
+        EnsurePromptColumn(controlRhythmPrompt.transform, "LeftColumn", "LeftUp", "LeftDown", new Vector2(0.625f, 0.5f));
+        EnsurePromptColumn(controlRhythmPrompt.transform, "RightColumn", "RightUp", "RightDown", new Vector2(0.875f, 0.5f));
+
+        // Legacy single-slot prompt nodes stay in the scene for existing assignments, but the four-column prompt owns runtime state.
+        Transform legacyKeySlot = controlRhythmPrompt.transform.Find("KeySlot");
+        Transform legacyHandSlot = controlRhythmPrompt.transform.Find("HandSlot");
+        if (legacyKeySlot != null)
+        {
+            legacyKeySlot.gameObject.SetActive(false);
+        }
+        if (legacyHandSlot != null)
+        {
+            legacyHandSlot.gameObject.SetActive(false);
+        }
+    }
+
+    private void EnsurePromptColumn(Transform parent, string columnName, string upName, string downName, Vector2 anchor)
+    {
+        EnsurePromptSlot(parent, columnName, anchor, Vector2.zero, new Vector2(86f, 96f));
+        Transform column = parent.Find(columnName);
+        if (column == null)
+        {
+            return;
+        }
+
+        EnsurePromptSlot(column, "Key", new Vector2(0.5f, 0.68f), Vector2.zero, new Vector2(78f, 52f));
+        EnsurePromptSlot(column, "Hand", new Vector2(0.5f, 0.22f), Vector2.zero, new Vector2(54f, 42f));
+        Transform key = column.Find("Key");
+        Transform hand = column.Find("Hand");
+        if (key != null)
+        {
+            EnsurePromptImageSlot(key, upName);
+            EnsurePromptImageSlot(key, downName);
+        }
+        if (hand != null)
+        {
+            EnsurePromptImageSlot(hand, "HandUp");
+            EnsurePromptImageSlot(hand, "HandDown");
+        }
+    }
+
+    private void EnsurePromptSlot(Transform parent, string name, Vector2 anchor, Vector2 position, Vector2 size)
+    {
+        Transform existing = parent.Find(name);
+        if (existing != null)
+        {
+            return;
+        }
+
+        CreateRect(parent, name, anchor, anchor, position, size);
+    }
+
+    private void EnsurePromptImageSlot(Transform parent, string name)
+    {
+        Transform existing = parent.Find(name);
+        GameObject obj;
+        if (existing != null)
+        {
+            obj = existing.gameObject;
+        }
+        else
+        {
+            obj = CreateRect(parent, name, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero).gameObject;
+        }
+
+        Image image = obj.GetComponent<Image>();
+        if (image == null)
+        {
+            image = obj.AddComponent<Image>();
+            image.preserveAspect = true;
+        }
+        image.raycastTarget = false;
+    }
+
+    private void CacheControlRhythmPrompt()
+    {
+        if (controlRhythmPrompt == null)
+        {
+            return;
+        }
+
+        controlRhythmPromptGroup = controlRhythmPrompt.GetComponent<CanvasGroup>();
+        if (controlRhythmPromptGroup == null)
+        {
+            controlRhythmPromptGroup = controlRhythmPrompt.AddComponent<CanvasGroup>();
+        }
+        controlRhythmPromptGroup.blocksRaycasts = false;
+        controlRhythmPromptGroup.interactable = false;
+
+        CachePromptColumn(spacePrompt, "SpaceColumn", "SpaceUp", "SpaceDown");
+        CachePromptColumn(downPrompt, "DownColumn", "DownUp", "DownDown");
+        CachePromptColumn(leftPrompt, "LeftColumn", "LeftUp", "LeftDown");
+        CachePromptColumn(rightPrompt, "RightColumn", "RightUp", "RightDown");
+        SetPromptColumnsActive(false, false, false, false, false);
+    }
+
+    private void CachePromptColumn(PromptColumn column, string columnName, string upName, string downName)
+    {
+        Transform columnRoot = controlRhythmPrompt != null ? controlRhythmPrompt.transform.Find(columnName) : null;
+        Transform key = columnRoot != null ? columnRoot.Find("Key") : null;
+        Transform hand = columnRoot != null ? columnRoot.Find("Hand") : null;
+        column.up = FindPromptObject(key, upName);
+        column.down = FindPromptObject(key, downName);
+        column.handUp = FindPromptObject(hand, "HandUp");
+        column.handDown = FindPromptObject(hand, "HandDown");
+        column.scaleRoot = columnRoot != null ? columnRoot : controlRhythmPrompt.transform;
+        column.defaultScale = column.scaleRoot.localScale == Vector3.zero ? Vector3.one : column.scaleRoot.localScale;
+    }
+
+    private GameObject FindPromptObject(Transform parent, string name)
+    {
+        Transform child = parent != null ? parent.Find(name) : null;
+        return child != null ? child.gameObject : null;
     }
 
     private void CacheTutorialStepImages(Transform root)
@@ -588,16 +741,73 @@ public class VerticalRunnerUI : MonoBehaviour
         ApplyBeatLaneHighlight(beatPosition, lastJumpStartBeat, lastBeatsPerPlatform);
     }
 
+    public void UpdateControlRhythmPrompt(bool spaceDown, bool downDown, bool leftDown, bool rightDown, bool visible)
+    {
+        if (controlRhythmPrompt == null)
+        {
+            return;
+        }
+
+        if (controlRhythmPromptGroup != null)
+        {
+            controlRhythmPromptGroup.alpha = Mathf.Lerp(controlRhythmPromptGroup.alpha, visible ? 1f : 0f, Time.unscaledDeltaTime * 12f);
+            controlRhythmPromptGroup.blocksRaycasts = false;
+            controlRhythmPromptGroup.interactable = false;
+        }
+
+        SetPromptColumnsActive(spaceDown, downDown, leftDown, rightDown, visible);
+        ApplyPromptColumnScale(spacePrompt, visible && spaceDown);
+        ApplyPromptColumnScale(downPrompt, visible && downDown);
+        ApplyPromptColumnScale(leftPrompt, visible && leftDown);
+        ApplyPromptColumnScale(rightPrompt, visible && rightDown);
+    }
+
+    private void SetPromptColumnsActive(bool spaceDown, bool downDown, bool leftDown, bool rightDown, bool visible)
+    {
+        SetPromptColumnActive(spacePrompt, visible, spaceDown);
+        SetPromptColumnActive(downPrompt, visible, downDown);
+        SetPromptColumnActive(leftPrompt, visible, leftDown);
+        SetPromptColumnActive(rightPrompt, visible, rightDown);
+    }
+
+    private void SetPromptColumnActive(PromptColumn column, bool visible, bool pressed)
+    {
+        SetActiveIfPresent(column.up, visible && !pressed);
+        SetActiveIfPresent(column.down, visible && pressed);
+        SetActiveIfPresent(column.handUp, visible && !pressed);
+        SetActiveIfPresent(column.handDown, visible && pressed);
+    }
+
+    private void ApplyPromptColumnScale(PromptColumn column, bool pressed)
+    {
+        if (column.scaleRoot == null)
+        {
+            return;
+        }
+
+        float targetScale = pressed ? 1.08f : 1f;
+        column.scaleRoot.localScale = Vector3.Lerp(column.scaleRoot.localScale, column.defaultScale * targetScale, Time.unscaledDeltaTime * 16f);
+    }
+
+    private void SetActiveIfPresent(GameObject obj, bool active)
+    {
+        if (obj != null && obj.activeSelf != active)
+        {
+            obj.SetActive(active);
+        }
+    }
+
     private void ApplyBeatLaneHighlight(float beatPosition, int jumpStartBeat, int beatsPerPlatform)
     {
-        int beatInBar = PositiveModulo(Mathf.FloorToInt(beatPosition), Mathf.Max(1, beatDots.Count));
+        int beatInBar = PositiveModulo(Mathf.FloorToInt(beatPosition), 4);
         float frac = beatPosition - Mathf.Floor(beatPosition);
         for (int i = 0; i < beatDots.Count; i++)
         {
-            bool jumpBeat = PositiveModulo(i - jumpStartBeat, beatsPerPlatform) == 0;
-            bool active = jumpBeat && i == beatInBar;
-            beatDots[i].color = active ? new Color(1f, 0.86f, 0.18f, 1f) : jumpBeat ? new Color(1f, 0.86f, 0.18f, 0.5f) : new Color(0.25f, 0.72f, 1f, 0.18f);
-            beatDots[i].transform.localScale = active ? Vector3.one * Mathf.Lerp(1.35f, 0.92f, frac) : jumpBeat ? Vector3.one * 1.05f : Vector3.one * 0.78f;
+            int slot = PositiveModulo(i, 4);
+            bool jumpBeat = slot == 0 || slot == 2;
+            bool active = slot == beatInBar;
+            beatDots[i].color = active ? new Color(1f, 0.86f, 0.18f, 1f) : jumpBeat ? new Color(1f, 0.86f, 0.18f, 0.5f) : new Color(0.25f, 0.72f, 1f, 0.28f);
+            beatDots[i].transform.localScale = active ? Vector3.one * Mathf.Lerp(1.35f, 0.92f, frac) : jumpBeat ? Vector3.one * 1.05f : Vector3.one * 0.86f;
         }
     }
 

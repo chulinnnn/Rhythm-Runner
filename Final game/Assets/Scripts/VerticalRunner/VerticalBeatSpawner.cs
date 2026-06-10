@@ -144,6 +144,136 @@ public class VerticalBeatSpawner : MonoBehaviour
         return nearest;
     }
 
+    public VerticalRunnerPickup GetPromptCollectibleCoin(float beatPosition, int leadBeats)
+    {
+        int currentBeat = Mathf.FloorToInt(beatPosition);
+        int earliestBeat = currentBeat + 1;
+        int latestBeat = currentBeat + Mathf.Max(1, leadBeats);
+        VerticalRunnerPickup best = null;
+        int bestDistance = int.MaxValue;
+        for (int i = 0; i < pickups.Count; i++)
+        {
+            VerticalRunnerPickup pickup = pickups[i];
+            if (pickup == null || pickup.collected || pickup.missed || !pickup.gameObject.activeInHierarchy)
+            {
+                continue;
+            }
+
+            if (pickup.beatIndex < earliestBeat || pickup.beatIndex > latestBeat)
+            {
+                continue;
+            }
+
+            int distance = Mathf.Abs(pickup.beatIndex - currentBeat);
+            if (distance < bestDistance)
+            {
+                best = pickup;
+                bestDistance = distance;
+            }
+        }
+
+        return best;
+    }
+
+    public VerticalRunnerPickup GetCollectibleCoinAtBeat(int beatIndex)
+    {
+        for (int i = 0; i < pickups.Count; i++)
+        {
+            VerticalRunnerPickup pickup = pickups[i];
+            if (pickup == null)
+            {
+                continue;
+            }
+
+            if (pickup.beatIndex == beatIndex)
+            {
+                return pickup;
+            }
+        }
+
+        return null;
+    }
+
+    public VerticalRunnerPickup GetCollectibleCoinForPlatform(VerticalRunnerPlatform platform)
+    {
+        if (platform == null)
+        {
+            return null;
+        }
+
+        int expectedBeat = platform.beatIndex + 1;
+        Vector3 platformPosition = platform.transform.position;
+        VerticalRunnerPickup best = null;
+        float bestDistance = float.MaxValue;
+        for (int i = 0; i < pickups.Count; i++)
+        {
+            VerticalRunnerPickup pickup = pickups[i];
+            if (pickup == null || pickup.beatIndex != expectedBeat)
+            {
+                continue;
+            }
+
+            float distance = Vector2.Distance(pickup.transform.position, platformPosition);
+            if (distance < bestDistance)
+            {
+                best = pickup;
+                bestDistance = distance;
+            }
+        }
+
+        return best;
+    }
+
+    public VerticalRunnerPlatform GetPromptDirectionalPlatform(float beatPosition, int leadBeats)
+    {
+        int currentBeat = Mathf.FloorToInt(beatPosition);
+        int earliestBeat = currentBeat + 1;
+        int latestBeat = currentBeat + Mathf.Max(1, leadBeats);
+        VerticalRunnerPlatform best = null;
+        int bestDistance = int.MaxValue;
+        for (int i = 0; i < platforms.Count; i++)
+        {
+            VerticalRunnerPlatform platform = platforms[i];
+            if (platform == null || !platform.requiresDirectionalChoice || platform.actionBeatIndex < 0)
+            {
+                continue;
+            }
+
+            if (platform.actionBeatIndex < earliestBeat || platform.actionBeatIndex > latestBeat)
+            {
+                continue;
+            }
+
+            int distance = Mathf.Abs(platform.actionBeatIndex - currentBeat);
+            if (distance < bestDistance)
+            {
+                best = platform;
+                bestDistance = distance;
+            }
+        }
+
+        return best;
+    }
+
+    public VerticalRunnerPlatform GetDirectionalPlatformForActionBeat(int beatIndex)
+    {
+        for (int i = 0; i < platforms.Count; i++)
+        {
+            VerticalRunnerPlatform platform = platforms[i];
+            if (platform == null || !platform.requiresDirectionalChoice || platform.actionBeatIndex < 0)
+            {
+                continue;
+            }
+
+            if (platform.actionBeatIndex == beatIndex)
+            {
+                return platform;
+            }
+        }
+
+        return null;
+    }
+
     public VerticalRunnerPickup GetMissedCollectibleCoin(Vector3 position, float radius, float beatPosition, float actionWindowBeats)
     {
         VerticalRunnerPickup nearest = null;

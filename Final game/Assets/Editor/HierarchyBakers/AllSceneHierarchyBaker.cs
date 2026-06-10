@@ -339,6 +339,7 @@ public static class AllSceneHierarchyBaker
         GameObject canvas = EnsureCanvasRoot("StartMenuCanvas", 120);
         GameObject root = EnsureFullscreenRect(canvas.transform, "Root");
         EnsureImage(root, new Color(0.05f, 0.34f, 0.52f, 1f));
+        EnsureStartMusicDecorations(root.transform);
         EnsureText(root.transform, "Title", "Beat Bunny", new Vector2(0.5f, 1f), new Vector2(0f, -82f), new Vector2(840f, 82f), 58, FontStyle.Bold, Color.white);
         EnsureText(root.transform, "Subtitle", "Choose a rhythm path", new Vector2(0.5f, 1f), new Vector2(0f, -142f), new Vector2(840f, 40f), 26, FontStyle.Normal, new Color(0.95f, 1f, 0.82f));
 
@@ -367,6 +368,36 @@ public static class AllSceneHierarchyBaker
         Save(scene);
     }
 
+    public static void EnsureStartMusicDecorations(Transform root)
+    {
+        if (root == null)
+        {
+            return;
+        }
+
+        Transform existing = root.Find("music");
+        bool created = existing == null;
+        GameObject music = EnsureMissingRect(root, "music", Vector2.zero, Vector2.zero, Vector2.zero);
+        if (created)
+        {
+            RectTransform rect = music.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = Vector2.zero;
+            music.transform.SetSiblingIndex(0);
+        }
+
+        if (music.GetComponent<StartMenuMusicVisualizer>() == null)
+        {
+            music.AddComponent<StartMenuMusicVisualizer>();
+        }
+
+        EnsureMissingRect(music.transform, "Templates", Vector2.zero, Vector2.zero, Vector2.zero);
+        EnsureMissingRect(music.transform, "StaffLines", Vector2.zero, Vector2.zero, Vector2.zero);
+        EnsureMissingRect(music.transform, "Runtime", Vector2.zero, Vector2.zero, Vector2.zero);
+    }
+
     private static void RebuildOceanScene()
     {
         Scene scene = EditorSceneManager.OpenScene("Assets/Scenes/OceanRhythm.unity", OpenSceneMode.Single);
@@ -383,6 +414,7 @@ public static class AllSceneHierarchyBaker
         GameObject canvas = EnsureCanvasRoot("OceanRhythmCanvas", 100);
         GameObject root = EnsureFullscreenRect(canvas.transform, "OceanRoot");
         EnsureImage(root, new Color(0.03f, 0.43f, 0.66f, 1f));
+        EnsureOceanBucketAlbumConfig();
         EnsureOceanContract(root.transform);
         EnsureCamera();
         EnsureEventSystem();
@@ -648,11 +680,81 @@ public static class AllSceneHierarchyBaker
 
         EnsureOceanOverlay(root, "CompleteOverlay", false);
         EnsureOceanOverlay(root, "PondCompleteOverlay", true);
-        EnsureOceanOverlay(root, "BeatCardOverlay", false);
+        EnsureOceanBeatCardContract(root);
         EnsureOceanOverlay(root, "ParentHelpOverlay", true);
-        EnsureBucketAlbum(root);
+        EnsureOceanBucketAlbumContract(root);
         EnsureSoundMatch(root);
         EnsureText(root, "RewardToast", "", new Vector2(0.5f, 0.86f), Vector2.zero, new Vector2(620f, 54f), 30, FontStyle.Bold, new Color(1f, 0.86f, 0.18f));
+    }
+
+    public static void EnsureOceanBucketAlbumConfig()
+    {
+        GameObject configRoot = EnsureRoot("OceanRhythmConfig");
+        GameObject assetsObject = EnsurePlainChild(configRoot.transform, "BucketAlbumAssets");
+        OceanBucketAlbumAssets assets = assetsObject.GetComponent<OceanBucketAlbumAssets>();
+        if (assets == null)
+        {
+            assets = assetsObject.AddComponent<OceanBucketAlbumAssets>();
+        }
+        if (assets.decorationIcons == null || assets.decorationIcons.Length == 0)
+        {
+            OceanDecorationReward[] rewards = OceanBucketInventory.GetAllDecorations();
+            assets.decorationIcons = new OceanDecorationSpriteBinding[rewards.Length];
+            for (int i = 0; i < rewards.Length; i++)
+            {
+                assets.decorationIcons[i] = new OceanDecorationSpriteBinding { reward = rewards[i] };
+            }
+        }
+        EditorUtility.SetDirty(assetsObject);
+        EditorUtility.SetDirty(assets);
+    }
+
+    public static void EnsureOceanBeatCardContract(Transform root)
+    {
+        if (root == null)
+        {
+            return;
+        }
+
+        GameObject overlay = EnsureFullscreenPanel(root, "BeatCardOverlay", new Color(0f, 0f, 0f, 0.72f));
+        GameObject cards = EnsureMissingRect(overlay.transform, "Cards", Vector2.zero, Vector2.zero, Vector2.zero);
+        RectTransform cardsRect = cards.GetComponent<RectTransform>();
+        if (cardsRect != null)
+        {
+            cardsRect.anchorMin = Vector2.zero;
+            cardsRect.anchorMax = Vector2.one;
+            cardsRect.anchoredPosition = Vector2.zero;
+            cardsRect.sizeDelta = Vector2.zero;
+        }
+
+        EnsureOceanBeatCard(cards.transform, "IntroCard", "Little Rhythm Ocean", "Feel 2/4, 3/4, 4/4, and 6/8", "Pick a sea friend and listen first. Then tap with the bright bubbles to feel the beat and bring the fish home.");
+        EnsureOceanBeatCard(cards.transform, "FourFourCard", "4/4 Walking Beat", "STRONG  soft  soft  soft", "A walking beat feels steady: one strong step, then three soft steps.");
+        EnsureOceanBeatCard(cards.transform, "ThreeFourCard", "3/4 Sway Beat", "STRONG  soft  soft", "A sway beat rocks like a boat: strong, soft, soft.");
+        EnsureOceanBeatCard(cards.transform, "TwoFourCard", "2/4 March Beat", "STRONG  soft", "A march beat steps left and right: strong, soft.");
+        EnsureOceanBeatCard(cards.transform, "SixEightCard", "6/8 Wave Beat", "STRONG  soft  soft   STRONG  soft  soft", "A wave beat rolls in two groups: strong soft soft, strong soft soft.");
+
+        for (int i = 0; i < cards.transform.childCount; i++)
+        {
+            cards.transform.GetChild(i).gameObject.SetActive(false);
+        }
+        overlay.SetActive(false);
+    }
+
+    private static void EnsureOceanBeatCard(Transform parent, string name, string title, string pattern, string body)
+    {
+        GameObject card = EnsureMissingRect(parent, name, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(780f, 420f));
+        Image cardImage = card.GetComponent<Image>();
+        if (cardImage == null)
+        {
+            cardImage = card.AddComponent<Image>();
+            cardImage.color = new Color(0.05f, 0.36f, 0.46f, 0.98f);
+        }
+        cardImage.raycastTarget = false;
+
+        EnsureMissingText(card.transform, "Title", title, new Vector2(0.5f, 0.78f), Vector2.zero, new Vector2(680f, 62f), 42, FontStyle.Bold, Color.white);
+        EnsureMissingText(card.transform, "Pattern", pattern, new Vector2(0.5f, 0.58f), Vector2.zero, new Vector2(690f, 58f), 30, FontStyle.Bold, new Color(1f, 0.86f, 0.18f));
+        EnsureMissingText(card.transform, "Body", body, new Vector2(0.5f, 0.42f), Vector2.zero, new Vector2(680f, 88f), 26, FontStyle.Normal, Color.white);
+        EnsureOptionalButton(card.transform, "CloseButton", "Close", new Vector2(0.5f, 0.18f), Vector2.zero, new Vector2(220f, 64f));
     }
 
     private static void EnsureOceanOverlay(Transform root, string name, bool withBack)
@@ -672,17 +774,50 @@ public static class AllSceneHierarchyBaker
         overlay.SetActive(false);
     }
 
-    private static void EnsureBucketAlbum(Transform root)
+    public static void EnsureOceanBucketAlbumContract(Transform root)
     {
-        GameObject overlay = EnsureFullscreenPanel(root, "BucketAlbumOverlay", new Color(0f, 0f, 0f, 0.72f));
-        GameObject card = EnsurePanel(overlay.transform, "Card", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(920f, 560f), new Color(0.05f, 0.36f, 0.46f, 0.98f));
-        EnsureText(card.transform, "Title", "My Rhythm Bucket", new Vector2(0.5f, 0.92f), Vector2.zero, new Vector2(820f, 54f), 38, FontStyle.Bold, Color.white);
-        GameObject preview = EnsureRect(card.transform, "BucketPreview", new Vector2(0.28f, 0.48f), Vector2.zero, new Vector2(360f, 380f));
-        EnsureImage(EnsureRect(preview.transform, "BucketImage", new Vector2(0.5f, 0.42f), Vector2.zero, new Vector2(220f, 220f)), new Color(1f, 1f, 1f, 0.18f));
-        GameObject library = EnsurePanel(card.transform, "DecorationLibrary", new Vector2(0.67f, 0.52f), Vector2.zero, new Vector2(260f, 340f), new Color(1f, 1f, 1f, 0.08f));
-        EnsureRect(library.transform, "Grid", new Vector2(0.5f, 0.45f), Vector2.zero, new Vector2(226f, 300f));
-        EnsureText(card.transform, "Hint", "Tap a locked decoration to see how to unlock it.", new Vector2(0.78f, 0.52f), Vector2.zero, new Vector2(290f, 300f), 24, FontStyle.Bold, new Color(1f, 0.94f, 0.68f));
-        EnsureButton(card.transform, "CloseButton", "Close", new Vector2(0.5f, 0.075f), Vector2.zero, new Vector2(200f, 56f));
+        if (root == null)
+        {
+            return;
+        }
+
+        EnsureOceanBucketAlbumConfig();
+        GameObject overlay = EnsureFullscreenMissingPanel(root, "BucketAlbumOverlay", new Color(0f, 0f, 0f, 0.72f));
+        GameObject card = EnsureMissingPanel(overlay.transform, "Card", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1080f, 620f), new Color(0.05f, 0.36f, 0.46f, 0.98f));
+
+        GameObject header = EnsureMissingRect(card.transform, "Header", new Vector2(0.5f, 0.91f), Vector2.zero, new Vector2(980f, 70f));
+        EnsureMissingText(header.transform, "Title", "My Rhythm Bucket", new Vector2(0.34f, 0.5f), Vector2.zero, new Vector2(470f, 54f), 42, FontStyle.Bold, Color.white);
+        EnsureBucketCounter(header.transform, "Shells", "Shells", "0", new Vector2(0.68f, 0.5f));
+        EnsureBucketCounter(header.transform, "Pearls", "Pearls", "0", new Vector2(0.83f, 0.5f));
+        EnsureOptionalButton(header.transform, "CloseButton", "Close", new Vector2(0.96f, 0.5f), Vector2.zero, new Vector2(120f, 48f));
+
+        GameObject preview = EnsureMissingPanel(card.transform, "BucketPreview", new Vector2(0.18f, 0.49f), Vector2.zero, new Vector2(330f, 410f), new Color(1f, 1f, 1f, 0f));
+        EnsureMissingImage(EnsureMissingRect(preview.transform, "BucketImage", new Vector2(0.5f, 0.42f), Vector2.zero, new Vector2(250f, 250f)), new Color(1f, 1f, 1f, 0.18f));
+        EnsureBucketSlot(preview.transform, "TopSlot", new Vector2(0.5f, 0.84f));
+        EnsureBucketSlot(preview.transform, "LeftSlot", new Vector2(0.24f, 0.5f));
+        EnsureBucketSlot(preview.transform, "RightSlot", new Vector2(0.76f, 0.5f));
+        EnsureBucketSlot(preview.transform, "FrontSlot", new Vector2(0.5f, 0.42f));
+        EnsureBucketSlot(preview.transform, "CharmSlot", new Vector2(0.5f, 0.14f));
+
+        GameObject collection = EnsureMissingPanel(card.transform, "DecorationCollection", new Vector2(0.5f, 0.49f), Vector2.zero, new Vector2(340f, 410f), new Color(1f, 1f, 1f, 0.08f));
+        EnsureMissingText(collection.transform, "Title", "My Decorations", new Vector2(0.5f, 0.92f), Vector2.zero, new Vector2(290f, 34f), 25, FontStyle.Bold, Color.white);
+        GameObject grid = EnsureMissingRect(collection.transform, "Grid", new Vector2(0.5f, 0.44f), Vector2.zero, new Vector2(286f, 320f));
+        GridLayoutGroup gridLayout = grid.GetComponent<GridLayoutGroup>();
+        if (gridLayout == null)
+        {
+            gridLayout = grid.AddComponent<GridLayoutGroup>();
+            gridLayout.cellSize = new Vector2(132f, 94f);
+            gridLayout.spacing = new Vector2(12f, 12f);
+            gridLayout.childAlignment = TextAnchor.MiddleCenter;
+        }
+        EnsureDecorationTemplate(grid.transform, "UnlockedItemTemplate", new Color(1f, 1f, 1f, 0.92f));
+        EnsureDecorationTemplate(grid.transform, "LockedItemTemplate", new Color(0.18f, 0.28f, 0.34f, 0.92f));
+        EnsureOptionalButton(collection.transform, "PrevPageButton", "<", new Vector2(0.08f, 0.5f), Vector2.zero, new Vector2(56f, 72f));
+        EnsureOptionalButton(collection.transform, "NextPageButton", ">", new Vector2(0.92f, 0.5f), Vector2.zero, new Vector2(56f, 72f));
+        EnsureMissingText(collection.transform, "PageText", "1 / 1", new Vector2(0.5f, 0.06f), Vector2.zero, new Vector2(120f, 30f), 16, FontStyle.Bold, Color.white);
+
+        EnsureDecorationDetail(card.transform);
+        EnsureOptionalButton(card.transform, "CloseButton", "Close", new Vector2(0.5f, 0.075f), Vector2.zero, new Vector2(200f, 56f));
         overlay.SetActive(false);
     }
 
@@ -804,6 +939,7 @@ public static class AllSceneHierarchyBaker
         EnsureText(bottom.transform, "Feedback", "Ready", new Vector2(0.5f, 0.72f), Vector2.zero, new Vector2(620f, 42f), 30, FontStyle.Bold, new Color(1f, 0.94f, 0.68f));
         GameObject beatLane = EnsureRect(bottom.transform, "BeatLane", new Vector2(0.5f, 0.38f), Vector2.zero, new Vector2(300f, 44f));
         EnsureBeatDots(beatLane.transform);
+        EnsureVerticalControlRhythmPrompt(bottom.transform);
         EnsureOptionalButton(bottom.transform, "BeatVisualToggleButton", "Beat: ON", new Vector2(0.18f, 0.38f), Vector2.zero, new Vector2(126f, 40f));
         GameObject progress = EnsurePanel(bottom.transform, "Progress", new Vector2(0.5f, 0.12f), Vector2.zero, new Vector2(540f, 18f), new Color(1f, 1f, 1f, 0.18f));
         Image fill = EnsureImage(EnsureRect(progress.transform, "Fill", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(540f, 18f)), new Color(0.27f, 0.95f, 0.54f, 1f));
@@ -1417,10 +1553,32 @@ public static class AllSceneHierarchyBaker
         return obj;
     }
 
+    private static GameObject EnsureFullscreenMissingPanel(Transform parent, string name, Color color)
+    {
+        GameObject obj = EnsureMissingRect(parent, name, Vector2.zero, Vector2.zero, Vector2.zero);
+        RectTransform rect = obj.GetComponent<RectTransform>();
+        if (rect != null && rect.anchorMin == Vector2.zero && rect.anchorMax == Vector2.zero && rect.sizeDelta == Vector2.zero)
+        {
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = Vector2.zero;
+        }
+        EnsureMissingImage(obj, color);
+        return obj;
+    }
+
     private static GameObject EnsurePanel(Transform parent, string name, Vector2 anchor, Vector2 position, Vector2 size, Color color)
     {
         GameObject obj = EnsureRect(parent, name, anchor, position, size);
         EnsureImage(obj, color);
+        return obj;
+    }
+
+    private static GameObject EnsureMissingPanel(Transform parent, string name, Vector2 anchor, Vector2 position, Vector2 size, Color color)
+    {
+        GameObject obj = EnsureMissingRect(parent, name, anchor, position, size);
+        EnsureMissingImage(obj, color);
         return obj;
     }
 
@@ -1510,6 +1668,87 @@ public static class AllSceneHierarchyBaker
         return text;
     }
 
+    private static Text EnsureBucketCounter(Transform parent, string name, string label, string value, Vector2 anchor)
+    {
+        GameObject counter = EnsureMissingRect(parent, name, anchor, Vector2.zero, new Vector2(142f, 48f));
+        EnsureMissingText(counter.transform, "Label", label, new Vector2(0.5f, 0.72f), Vector2.zero, new Vector2(132f, 20f), 15, FontStyle.Bold, new Color(0.78f, 0.95f, 1f));
+        return EnsureMissingText(counter.transform, "Value", value, new Vector2(0.5f, 0.28f), Vector2.zero, new Vector2(132f, 24f), 22, FontStyle.Bold, Color.white);
+    }
+
+    private static void EnsureBucketSlot(Transform parent, string name, Vector2 anchor)
+    {
+        GameObject slot = EnsureMissingPanel(parent, name, anchor, Vector2.zero, new Vector2(82f, 82f), new Color(0.78f, 0.95f, 1f, 0.16f));
+        if (slot.GetComponent<OceanBucketSlot>() == null)
+        {
+            slot.AddComponent<OceanBucketSlot>();
+        }
+        EnsureMissingImage(EnsureMissingRect(slot.transform, "Highlight", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(82f, 82f)), new Color(1f, 0.86f, 0.18f, 0.62f)).raycastTarget = false;
+        Transform highlight = slot.transform.Find("Highlight");
+        if (highlight != null)
+        {
+            highlight.gameObject.SetActive(false);
+        }
+        EnsureMissingImage(EnsureMissingRect(slot.transform, "Decoration", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(50f, 50f)), Color.white).raycastTarget = false;
+        EnsureMissingText(slot.transform, "Label", SlotDefaultLabel(name), new Vector2(0.5f, 0f), new Vector2(0f, -20f), new Vector2(110f, 24f), 13, FontStyle.Bold, new Color(0.78f, 0.95f, 1f, 0.76f));
+    }
+
+    private static string SlotDefaultLabel(string name)
+    {
+        if (name == "TopSlot") return "Top";
+        if (name == "LeftSlot") return "Left";
+        if (name == "RightSlot") return "Right";
+        if (name == "CharmSlot") return "Charm";
+        return "Front";
+    }
+
+    private static void EnsureDecorationTemplate(Transform parent, string name, Color background)
+    {
+        GameObject item = EnsureMissingPanel(parent, name, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(132f, 94f), background);
+        if (item.GetComponent<Button>() == null)
+        {
+            Button button = item.AddComponent<Button>();
+            button.targetGraphic = item.GetComponent<Image>();
+            Navigation navigation = button.navigation;
+            navigation.mode = Navigation.Mode.None;
+            button.navigation = navigation;
+        }
+        EnsureMissingImage(EnsureMissingRect(item.transform, "SelectedBadge", new Vector2(0.14f, 0.82f), Vector2.zero, new Vector2(24f, 24f)), new Color(1f, 0.86f, 0.18f, 0.95f));
+        EnsureMissingImage(EnsureMissingRect(item.transform, "EquippedBadge", new Vector2(0.86f, 0.82f), Vector2.zero, new Vector2(24f, 24f)), new Color(0.27f, 0.95f, 0.54f, 0.95f));
+        EnsureMissingImage(EnsureMissingRect(item.transform, "LockBadge", new Vector2(0.86f, 0.82f), Vector2.zero, new Vector2(24f, 24f)), new Color(1f, 0.94f, 0.68f, 0.95f));
+        Image icon = EnsureMissingImage(EnsureMissingRect(item.transform, "Icon", new Vector2(0.26f, 0.54f), Vector2.zero, new Vector2(48f, 48f)), Color.white);
+        icon.raycastTarget = false;
+        icon.preserveAspect = true;
+        EnsureMissingText(item.transform, "Name", "Decoration", new Vector2(0.66f, 0.68f), Vector2.zero, new Vector2(78f, 24f), 14, FontStyle.Bold, new Color(0.02f, 0.15f, 0.22f));
+        EnsureMissingText(item.transform, "Status", "Use", new Vector2(0.66f, 0.42f), Vector2.zero, new Vector2(78f, 22f), 12, FontStyle.Bold, new Color(0.12f, 0.28f, 0.48f));
+        GameObject progress = EnsureMissingPanel(item.transform, "Progress", new Vector2(0.5f, 0.14f), Vector2.zero, new Vector2(104f, 12f), new Color(1f, 1f, 1f, 0.16f));
+        Image fill = EnsureMissingImage(EnsureMissingRect(progress.transform, "Fill", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(104f, 12f)), new Color(0.27f, 0.95f, 0.54f, 1f));
+        fill.type = Image.Type.Filled;
+        fill.fillMethod = Image.FillMethod.Horizontal;
+        EnsureMissingText(progress.transform, "Value", "", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(104f, 18f), 10, FontStyle.Bold, Color.white);
+        EnsureMissingText(item.transform, "Requirement", "", new Vector2(0.5f, 0.02f), Vector2.zero, new Vector2(116f, 18f), 10, FontStyle.Bold, Color.white);
+        item.SetActive(false);
+    }
+
+    private static void EnsureDecorationDetail(Transform parent)
+    {
+        GameObject detail = EnsureMissingPanel(parent, "DecorationDetail", new Vector2(0.82f, 0.49f), Vector2.zero, new Vector2(280f, 410f), new Color(1f, 1f, 1f, 0.08f));
+        Image icon = EnsureMissingImage(EnsureMissingRect(detail.transform, "Icon", new Vector2(0.5f, 0.8f), Vector2.zero, new Vector2(82f, 82f)), Color.white);
+        icon.raycastTarget = false;
+        icon.preserveAspect = true;
+        EnsureMissingText(detail.transform, "Name", "Decoration", new Vector2(0.5f, 0.63f), Vector2.zero, new Vector2(240f, 34f), 25, FontStyle.Bold, Color.white);
+        EnsureMissingText(detail.transform, "Status", "Tap a decoration", new Vector2(0.5f, 0.55f), Vector2.zero, new Vector2(240f, 28f), 18, FontStyle.Bold, new Color(1f, 0.94f, 0.68f));
+        GameObject progress = EnsureMissingPanel(detail.transform, "Progress", new Vector2(0.5f, 0.43f), Vector2.zero, new Vector2(210f, 20f), new Color(1f, 1f, 1f, 0.16f));
+        Image fill = EnsureMissingImage(EnsureMissingRect(progress.transform, "Fill", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(210f, 20f)), new Color(0.27f, 0.95f, 0.54f, 1f));
+        fill.type = Image.Type.Filled;
+        fill.fillMethod = Image.FillMethod.Horizontal;
+        EnsureMissingText(progress.transform, "Value", "", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(210f, 22f), 14, FontStyle.Bold, Color.white);
+        GameObject requirement = EnsureMissingRect(detail.transform, "Requirement", new Vector2(0.5f, 0.32f), Vector2.zero, new Vector2(230f, 58f));
+        EnsureMissingImage(EnsureMissingRect(requirement.transform, "Icon", new Vector2(0.16f, 0.5f), Vector2.zero, new Vector2(34f, 34f)), Color.white).raycastTarget = false;
+        EnsureMissingText(requirement.transform, "Text", "Choose a decoration", new Vector2(0.62f, 0.5f), Vector2.zero, new Vector2(170f, 50f), 16, FontStyle.Bold, Color.white);
+        EnsureOptionalButton(detail.transform, "ActionButton", "Use", new Vector2(0.5f, 0.18f), Vector2.zero, new Vector2(180f, 54f));
+        EnsureMissingText(detail.transform, "Hint", "Tap a decoration to see how to unlock it.", new Vector2(0.5f, 0.06f), Vector2.zero, new Vector2(240f, 42f), 15, FontStyle.Bold, new Color(1f, 0.94f, 0.68f));
+    }
+
     private static Button EnsureButton(Transform parent, string name, string label, Vector2 anchor, Vector2 position, Vector2 size)
     {
         GameObject obj = EnsurePanel(parent, name, anchor, position, size, new Color(1f, 1f, 1f, 0.92f));
@@ -1584,6 +1823,61 @@ public static class AllSceneHierarchyBaker
         }
     }
 
+    private static void EnsureVerticalControlRhythmPrompt(Transform bottom)
+    {
+        GameObject prompt = EnsureMissingRect(bottom, "ControlRhythmPrompt", new Vector2(0.5f, 0.5f), new Vector2(260f, 0f), new Vector2(420f, 130f));
+        CanvasGroup group = prompt.GetComponent<CanvasGroup>();
+        if (group == null)
+        {
+            group = prompt.AddComponent<CanvasGroup>();
+            group.alpha = 0f;
+        }
+        group.interactable = false;
+        group.blocksRaycasts = false;
+
+        EnsureVerticalPromptColumn(prompt.transform, "SpaceColumn", "SpaceUp", "SpaceDown", new Vector2(0.125f, 0.5f));
+        EnsureVerticalPromptColumn(prompt.transform, "DownColumn", "DownUp", "DownDown", new Vector2(0.375f, 0.5f));
+        EnsureVerticalPromptColumn(prompt.transform, "LeftColumn", "LeftUp", "LeftDown", new Vector2(0.625f, 0.5f));
+        EnsureVerticalPromptColumn(prompt.transform, "RightColumn", "RightUp", "RightDown", new Vector2(0.875f, 0.5f));
+    }
+
+    private static void EnsureVerticalPromptColumn(Transform parent, string columnName, string upName, string downName, Vector2 anchor)
+    {
+        GameObject column = EnsureMissingRect(parent, columnName, anchor, Vector2.zero, new Vector2(86f, 96f));
+        GameObject key = EnsureMissingRect(column.transform, "Key", new Vector2(0.5f, 0.68f), Vector2.zero, new Vector2(78f, 52f));
+        GameObject hand = EnsureMissingRect(column.transform, "Hand", new Vector2(0.5f, 0.22f), Vector2.zero, new Vector2(54f, 42f));
+        EnsureVerticalPromptImageSlot(key.transform, upName);
+        EnsureVerticalPromptImageSlot(key.transform, downName);
+        EnsureVerticalPromptImageSlot(hand.transform, "HandUp");
+        EnsureVerticalPromptImageSlot(hand.transform, "HandDown");
+    }
+
+    private static void EnsureVerticalPromptImageSlot(Transform parent, string name)
+    {
+        Transform existing = parent.Find(name);
+        GameObject slot = existing != null ? existing.gameObject : EnsureMissingRect(parent, name, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+        RectTransform rect = slot.GetComponent<RectTransform>();
+        if (existing == null)
+        {
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+        }
+        Image image = slot.GetComponent<Image>();
+        if (image == null)
+        {
+            image = slot.AddComponent<Image>();
+            image.color = Color.white;
+            image.preserveAspect = true;
+        }
+        image.raycastTarget = false;
+        if (existing == null)
+        {
+            slot.SetActive(false);
+        }
+    }
+
     private static Image EnsureImage(GameObject obj, Color color)
     {
         Image image = obj.GetComponent<Image>();
@@ -1592,6 +1886,17 @@ public static class AllSceneHierarchyBaker
             image = obj.AddComponent<Image>();
         }
         image.color = color;
+        return image;
+    }
+
+    private static Image EnsureMissingImage(GameObject obj, Color color)
+    {
+        Image image = obj.GetComponent<Image>();
+        if (image == null)
+        {
+            image = obj.AddComponent<Image>();
+            image.color = color;
+        }
         return image;
     }
 

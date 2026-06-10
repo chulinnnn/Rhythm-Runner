@@ -223,6 +223,7 @@ public static class VerticalSceneHierarchyBaker
 
         GameObject beatLane = EnsureUiRect(bottom.transform, "BeatLane", new Vector2(0.5f, 0.38f), Vector2.zero, new Vector2(300f, 44f));
         EnsureBeatDots(beatLane.transform);
+        EnsureControlRhythmPrompt(bottom.transform);
         EnsureOptionalButton(bottom.transform, "BeatVisualToggleButton", "Beat: ON", new Vector2(0.18f, 0.38f), Vector2.zero, new Vector2(126f, 40f));
         GameObject progress = EnsureUiPanel(bottom.transform, "Progress", new Vector2(0.5f, 0.12f), Vector2.zero, new Vector2(540f, 18f), new Color(1f, 1f, 1f, 0.18f));
         Image fill = EnsureUiRect(progress.transform, "Fill", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(540f, 18f)).GetComponent<Image>();
@@ -631,6 +632,61 @@ public static class VerticalSceneHierarchyBaker
                 Image image = dot.AddComponent<Image>();
                 image.color = new Color(0.25f, 0.72f, 1f, 0.55f);
             }
+        }
+    }
+
+    private static void EnsureControlRhythmPrompt(Transform bottom)
+    {
+        GameObject prompt = EnsureMissingUiRect(bottom, "ControlRhythmPrompt", new Vector2(0.5f, 0.5f), new Vector2(260f, 0f), new Vector2(420f, 130f));
+        CanvasGroup group = prompt.GetComponent<CanvasGroup>();
+        if (group == null)
+        {
+            group = prompt.AddComponent<CanvasGroup>();
+            group.alpha = 0f;
+        }
+        group.interactable = false;
+        group.blocksRaycasts = false;
+
+        EnsurePromptColumn(prompt.transform, "SpaceColumn", "SpaceUp", "SpaceDown", new Vector2(0.125f, 0.5f));
+        EnsurePromptColumn(prompt.transform, "DownColumn", "DownUp", "DownDown", new Vector2(0.375f, 0.5f));
+        EnsurePromptColumn(prompt.transform, "LeftColumn", "LeftUp", "LeftDown", new Vector2(0.625f, 0.5f));
+        EnsurePromptColumn(prompt.transform, "RightColumn", "RightUp", "RightDown", new Vector2(0.875f, 0.5f));
+    }
+
+    private static void EnsurePromptColumn(Transform parent, string columnName, string upName, string downName, Vector2 anchor)
+    {
+        GameObject column = EnsureMissingUiRect(parent, columnName, anchor, Vector2.zero, new Vector2(86f, 96f));
+        GameObject key = EnsureMissingUiRect(column.transform, "Key", new Vector2(0.5f, 0.68f), Vector2.zero, new Vector2(78f, 52f));
+        GameObject hand = EnsureMissingUiRect(column.transform, "Hand", new Vector2(0.5f, 0.22f), Vector2.zero, new Vector2(54f, 42f));
+        EnsurePromptImageSlot(key.transform, upName);
+        EnsurePromptImageSlot(key.transform, downName);
+        EnsurePromptImageSlot(hand.transform, "HandUp");
+        EnsurePromptImageSlot(hand.transform, "HandDown");
+    }
+
+    private static void EnsurePromptImageSlot(Transform parent, string name)
+    {
+        Transform existing = parent.Find(name);
+        GameObject slot = existing != null ? existing.gameObject : EnsureMissingUiRect(parent, name, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+        RectTransform rect = slot.GetComponent<RectTransform>();
+        if (existing == null)
+        {
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+        }
+        Image image = slot.GetComponent<Image>();
+        if (image == null)
+        {
+            image = slot.AddComponent<Image>();
+            image.color = Color.white;
+            image.preserveAspect = true;
+        }
+        image.raycastTarget = false;
+        if (existing == null)
+        {
+            slot.SetActive(false);
         }
     }
 

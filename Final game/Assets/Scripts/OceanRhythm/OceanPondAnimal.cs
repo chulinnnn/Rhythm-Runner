@@ -62,6 +62,7 @@ public class OceanPondAnimal : MonoBehaviour
         animalImage.sprite = animalSprite != null ? animalSprite : bubbleSprite;
         animalImage.color = animalSprite != null ? Color.white : fallbackColor;
         animalImage.preserveAspect = true;
+        animalImage.raycastTarget = false;
 
         string displayName = IsMystery ? "?" : lesson.animalName;
         nameText = CreateText("Name", displayName, font, new Vector2(0.5f, 0.5f), new Vector2(0f, 8f), new Vector2(160f, 40f), 22, FontStyle.Bold, new Color(0.02f, 0.16f, 0.24f));
@@ -283,6 +284,7 @@ public class OceanPondAnimal : MonoBehaviour
             image.sprite = bubbleSprite;
             image.color = new Color(0.78f, 0.95f, 1f, 0.28f);
             image.preserveAspect = true;
+            image.raycastTarget = false;
             LayoutElement element = bubble.AddComponent<LayoutElement>();
             element.minWidth = 18f;
             element.minHeight = 18f;

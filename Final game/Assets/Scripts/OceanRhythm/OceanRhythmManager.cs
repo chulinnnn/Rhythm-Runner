@@ -101,6 +101,7 @@ public class OceanRhythmManager : MonoBehaviour
     private bool firstSingingShellShown;
     private Coroutine freePondPreviewRoutine;
     private readonly HashSet<OceanFishType> introducedFishTypes = new HashSet<OceanFishType>();
+    private OceanBucketAlbumAssets bucketAlbumAssets;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void RegisterSceneHook()
@@ -457,6 +458,16 @@ public class OceanRhythmManager : MonoBehaviour
     public Sprite GetDecorationSprite(OceanDecorationReward reward)
     {
         ApplyDefaultVisuals();
+        OceanBucketAlbumAssets albumAssets = GetBucketAlbumAssets();
+        if (albumAssets != null)
+        {
+            Sprite configuredSprite = albumAssets.GetDecorationSprite(reward);
+            if (configuredSprite != null)
+            {
+                return configuredSprite;
+            }
+        }
+
         if (bucketDecorationSprites != null && (int)reward >= 0 && (int)reward < bucketDecorationSprites.Length && bucketDecorationSprites[(int)reward] != null)
         {
             return bucketDecorationSprites[(int)reward];
@@ -496,6 +507,33 @@ public class OceanRhythmManager : MonoBehaviour
         }
 
         return shellSprite;
+    }
+
+    public OceanBucketAlbumAssets GetBucketAlbumAssets()
+    {
+        if (bucketAlbumAssets != null)
+        {
+            return bucketAlbumAssets;
+        }
+
+        Transform configTransform = null;
+        GameObject configRoot = GameObject.Find("OceanRhythmConfig");
+        if (configRoot != null)
+        {
+            configTransform = configRoot.transform.Find("BucketAlbumAssets");
+        }
+
+        if (configTransform != null)
+        {
+            bucketAlbumAssets = configTransform.GetComponent<OceanBucketAlbumAssets>();
+        }
+
+        if (bucketAlbumAssets == null)
+        {
+            bucketAlbumAssets = FindObjectOfType<OceanBucketAlbumAssets>(true);
+        }
+
+        return bucketAlbumAssets;
     }
 
     private void ApplyDefaultVisuals()

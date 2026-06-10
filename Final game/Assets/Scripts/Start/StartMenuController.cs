@@ -179,11 +179,45 @@ public class StartMenuController : MonoBehaviour
             PlayerPrefs.Save();
         });
         BindToggle(existing.transform, "Root/SettingsPanel/Card/SettingsContent/BeatVisualAssistRow/Toggle", BeatAssistKey);
+        EnsureMusicDecorations(existing.transform);
 
         aboutPanel.SetActive(false);
         settingsPanel.SetActive(false);
         recordsPanel.SetActive(false);
         return true;
+    }
+
+    private void EnsureMusicDecorations(Transform menuRoot)
+    {
+        Transform root = menuRoot.Find("Root");
+        if (root == null)
+        {
+            return;
+        }
+
+        Transform music = root.Find("music");
+        if (music == null)
+        {
+            if (!scenePolicy.autoCreateMissingObjects)
+            {
+                return;
+            }
+
+            GameObject obj = new GameObject("music", typeof(RectTransform));
+            obj.transform.SetParent(root, false);
+            RectTransform rect = obj.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = Vector2.zero;
+            obj.transform.SetSiblingIndex(0);
+            music = obj.transform;
+        }
+
+        if (music.GetComponent<StartMenuMusicVisualizer>() == null)
+        {
+            music.gameObject.AddComponent<StartMenuMusicVisualizer>();
+        }
     }
 
     private GameObject FindChild(Transform root, string path)

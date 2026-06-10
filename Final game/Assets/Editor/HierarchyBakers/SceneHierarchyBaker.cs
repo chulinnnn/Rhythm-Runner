@@ -36,6 +36,9 @@ public static class SceneHierarchyBaker
         }
 
         controller.RebuildEditModeHierarchy();
+        GameObject canvas = GameObject.Find("StartMenuCanvas");
+        Transform root = canvas != null ? canvas.transform.Find("Root") : null;
+        AllSceneHierarchyBaker.EnsureStartMusicDecorations(root);
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
     }
@@ -52,6 +55,14 @@ public static class SceneHierarchyBaker
         }
 
         manager.RebuildEditModeHierarchy();
+        GameObject canvas = GameObject.Find("OceanRhythmCanvas");
+        Transform root = canvas != null ? canvas.transform.Find("OceanRoot") : null;
+        if (root != null)
+        {
+            AllSceneHierarchyBaker.EnsureOceanBeatCardContract(root);
+            AllSceneHierarchyBaker.EnsureOceanBucketAlbumContract(root);
+        }
+        AllSceneHierarchyBaker.EnsureOceanBucketAlbumConfig();
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
     }

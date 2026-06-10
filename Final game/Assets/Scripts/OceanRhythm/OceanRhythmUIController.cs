@@ -5,6 +5,8 @@ using UnityEngine.UI;
 
 public class OceanRhythmUIController : MonoBehaviour
 {
+    private const int BucketAlbumItemsPerPage = 4;
+
     private static class OceanVisual
     {
         public static readonly Color DeepPanel = new Color(0.018f, 0.12f, 0.19f, 0.78f);
@@ -62,6 +64,7 @@ public class OceanRhythmUIController : MonoBehaviour
     private GameObject completeOverlay;
     private GameObject pondCompleteOverlay;
     private GameObject beatCardOverlay;
+    private Transform beatCardRoot;
     private GameObject bucketAlbumOverlay;
     private Text bucketCountText;
     private Text bucketShellText;
@@ -70,6 +73,23 @@ public class OceanRhythmUIController : MonoBehaviour
     private Image bucketIconImage;
     private Image bucketPreviewImage;
     private Image bucketDecorationImage;
+    private Text bucketAlbumShellText;
+    private Text bucketAlbumPearlText;
+    private Image decorationDetailIcon;
+    private Image decorationDetailProgressFill;
+    private Image decorationDetailRequirementIcon;
+    private Text decorationDetailNameText;
+    private Text decorationDetailStatusText;
+    private Text decorationDetailProgressText;
+    private Text decorationDetailRequirementText;
+    private Text decorationDetailActionText;
+    private Button decorationDetailActionButton;
+    private GameObject decorationDetailActionObject;
+    private Button bucketAlbumPrevPageButton;
+    private Button bucketAlbumNextPageButton;
+    private Text bucketAlbumPageText;
+    private GameObject unlockedDecorationTemplate;
+    private GameObject lockedDecorationTemplate;
     private Text rewardText;
     private GameObject beatInfoButton;
     private GameObject parentHelpOverlay;
@@ -107,6 +127,11 @@ public class OceanRhythmUIController : MonoBehaviour
     private float tapPulseScale = 1f;
     private bool tapButtonShowingBeatSprite;
     private bool beatCardOpen;
+    private bool hasSelectedDecoration;
+    private bool choosingBucketSlot;
+    private int bucketAlbumPageIndex;
+    private OceanDecorationReward selectedDecoration;
+    private readonly Dictionary<OceanBeatCardId, GameObject> beatCardViews = new Dictionary<OceanBeatCardId, GameObject>();
     private readonly Dictionary<string, ImageVisualOverride> pendingImageOverrides = new Dictionary<string, ImageVisualOverride>();
     private readonly Dictionary<string, ImageVisualOverride> pendingNameImageOverrides = new Dictionary<string, ImageVisualOverride>();
     private readonly Dictionary<string, RectTransformOverride> pendingRectOverrides = new Dictionary<string, RectTransformOverride>();
@@ -321,6 +346,7 @@ public class OceanRhythmUIController : MonoBehaviour
         completeOverlay = FindObject(existing.transform, "OceanRoot/CompleteOverlay");
         pondCompleteOverlay = FindObject(existing.transform, "OceanRoot/PondCompleteOverlay");
         beatCardOverlay = FindObject(existing.transform, "OceanRoot/BeatCardOverlay");
+        CacheBeatCards();
         parentHelpOverlay = FindObject(existing.transform, "OceanRoot/ParentHelpOverlay");
         bucketAlbumOverlay = FindObject(existing.transform, "OceanRoot/BucketAlbumOverlay");
         soundMatchOverlay = FindObject(existing.transform, "OceanRoot/SoundMatchOverlay");
@@ -349,8 +375,42 @@ public class OceanRhythmUIController : MonoBehaviour
         singingShellButtonText = FindText(existing.transform, "OceanRoot/SingingShellButton/Text");
         bucketPreviewImage = FindImage(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/BucketPreview/BucketImage");
         bucketDecorationImage = bucketDecorationImage != null ? bucketDecorationImage : FindImage(existing.transform, "OceanRoot/CatchBucketButton/Decoration");
-        bucketHintText = FindText(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/Hint");
-        decorationLibraryRoot = FindTransform(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/DecorationLibrary/Grid");
+        bucketAlbumShellText = FindText(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/Header/Shells/Value");
+        bucketAlbumPearlText = FindText(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/Header/Pearls/Value");
+        bucketHintText = FindText(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/DecorationDetail/Hint");
+        if (bucketHintText == null)
+        {
+            bucketHintText = FindText(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/Hint");
+        }
+        decorationLibraryRoot = FindTransform(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/DecorationCollection/Grid");
+        if (decorationLibraryRoot == null)
+        {
+            decorationLibraryRoot = FindTransform(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/DecorationLibrary/Grid");
+        }
+        unlockedDecorationTemplate = FindObject(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/DecorationCollection/Grid/UnlockedItemTemplate");
+        lockedDecorationTemplate = FindObject(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/DecorationCollection/Grid/LockedItemTemplate");
+        bucketAlbumPrevPageButton = FindButton(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/DecorationCollection/PrevPageButton");
+        bucketAlbumNextPageButton = FindButton(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/DecorationCollection/NextPageButton");
+        bucketAlbumPageText = FindText(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/DecorationCollection/PageText");
+        decorationDetailIcon = FindImage(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/DecorationDetail/Icon");
+        decorationDetailNameText = FindText(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/DecorationDetail/Name");
+        decorationDetailStatusText = FindText(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/DecorationDetail/Status");
+        decorationDetailProgressFill = FindImage(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/DecorationDetail/Progress/Fill");
+        decorationDetailProgressText = FindText(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/DecorationDetail/Progress/Value");
+        decorationDetailRequirementIcon = FindImage(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/DecorationDetail/Requirement/Icon");
+        decorationDetailRequirementText = FindText(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/DecorationDetail/Requirement/Text");
+        decorationDetailActionObject = FindObject(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/DecorationDetail/ActionButton");
+        decorationDetailActionButton = decorationDetailActionObject != null ? decorationDetailActionObject.GetComponent<Button>() : null;
+        if (decorationDetailActionObject != null && decorationDetailActionButton == null)
+        {
+            decorationDetailActionButton = decorationDetailActionObject.AddComponent<Button>();
+            Graphic graphic = decorationDetailActionObject.GetComponent<Graphic>();
+            if (graphic != null)
+            {
+                decorationDetailActionButton.targetGraphic = graphic;
+            }
+        }
+        decorationDetailActionText = decorationDetailActionObject != null ? decorationDetailActionObject.GetComponentInChildren<Text>(true) : null;
         soundMatchBubbleRoot = FindTransform(existing.transform, "OceanRoot/SoundMatchOverlay/Card/SoundBubbles");
         soundMatchTitleText = FindText(existing.transform, "OceanRoot/SoundMatchOverlay/Card/Title");
         soundMatchBodyText = FindText(existing.transform, "OceanRoot/SoundMatchOverlay/Card/Body");
@@ -422,7 +482,10 @@ public class OceanRhythmUIController : MonoBehaviour
                 manager.ReturnToStart();
             }
         });
-        BindButton(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/CloseButton", delegate { bucketAlbumOverlay.SetActive(false); });
+        BindButton(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/CloseButton", CloseBucketAlbum);
+        BindButton(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/Header/CloseButton", CloseBucketAlbum);
+        BindButton(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/DecorationCollection/PrevPageButton", delegate { ChangeBucketAlbumPage(-1); });
+        BindButton(existing.transform, "OceanRoot/BucketAlbumOverlay/Card/DecorationCollection/NextPageButton", delegate { ChangeBucketAlbumPage(1); });
         BindButton(existing.transform, "OceanRoot/PondCompleteOverlay/Card/PlayAgainButton", delegate
         {
             pondCompleteOverlay.SetActive(false);
@@ -456,10 +519,13 @@ public class OceanRhythmUIController : MonoBehaviour
 
         CacheCollectionIcons(existing.transform);
         CacheBucketSlots(existing.transform);
+        if (unlockedDecorationTemplate != null) unlockedDecorationTemplate.SetActive(false);
+        if (lockedDecorationTemplate != null) lockedDecorationTemplate.SetActive(false);
         if (completeOverlay != null) completeOverlay.SetActive(false);
         if (pondCompleteOverlay != null) pondCompleteOverlay.SetActive(false);
         if (beatCardOverlay != null)
         {
+            HideBeatCardViews();
             beatCardOverlay.SetActive(false);
             beatCardOpen = false;
         }
@@ -501,6 +567,12 @@ public class OceanRhythmUIController : MonoBehaviour
     {
         Transform child = FindTransform(root, path);
         return child != null ? child.GetComponent<Image>() : null;
+    }
+
+    private Button FindButton(Transform root, string path)
+    {
+        Transform child = FindTransform(root, path);
+        return child != null ? child.GetComponent<Button>() : null;
     }
 
     private void BindButton(Transform root, string path, UnityEngine.Events.UnityAction onClick)
@@ -584,7 +656,7 @@ public class OceanRhythmUIController : MonoBehaviour
             }
 
             Sprite slotSprite = manager != null && manager.GetBucketSlotSprite() != null ? manager.GetBucketSlotSprite() : circleSprite;
-            slot.Build(this, slotIds[i], slotSprite, uiFont);
+            slot.Build(this, slotIds[i], slotSprite, GetBucketSlotHighlightSprite(), uiFont);
             bucketSlots.Add(slot);
         }
     }
@@ -607,6 +679,7 @@ public class OceanRhythmUIController : MonoBehaviour
         beatCardOpen = false;
         if (beatCardOverlay != null)
         {
+            HideBeatCardViews();
             beatCardOverlay.SetActive(false);
         }
     }
@@ -642,11 +715,7 @@ public class OceanRhythmUIController : MonoBehaviour
 
     public void ShowOceanIntroCard(UnityEngine.Events.UnityAction onClose)
     {
-        ShowBeatCard(
-            "Little Rhythm Ocean",
-            "Goal: feel 2/4, 3/4, 4/4, and 6/8",
-            "Pick a sea friend and listen first. Then tap with the bright bubbles to feel the beat and bring the fish home.\nThis game helps children and new music learners recognize common beat patterns.",
-            onClose);
+        ShowBeatCard(OceanBeatCardId.Intro, onClose);
     }
 
     public void ShowBeatCardInfo(OceanLesson lesson)
@@ -665,10 +734,10 @@ public class OceanRhythmUIController : MonoBehaviour
             return;
         }
 
-        ShowBeatCard(lesson.meterLabel + "  " + BeatName(lesson), BeatPatternText(lesson), BeatBodyText(lesson), onClose);
+        ShowBeatCard(CardIdForLesson(lesson), onClose);
     }
 
-    private void ShowBeatCard(string cardTitle, string cardPattern, string cardBody, UnityEngine.Events.UnityAction onClose)
+    private void ShowBeatCard(OceanBeatCardId cardId, UnityEngine.Events.UnityAction onClose)
     {
         if (beatCardOverlay == null)
         {
@@ -679,66 +748,186 @@ public class OceanRhythmUIController : MonoBehaviour
             return;
         }
 
-        beatCardOverlay.SetActive(true);
-        beatCardOpen = true;
-        Text title = FindText(beatCardOverlay.transform, "Card/Title");
-        Text pattern = FindText(beatCardOverlay.transform, "Card/Pattern");
-        Text body = FindText(beatCardOverlay.transform, "Card/Body");
-        Transform tryTransform = beatCardOverlay.transform.Find("Card/TryButton");
-        Transform closeTransform = beatCardOverlay.transform.Find("Card/CloseButton");
-        Transform skipTransform = beatCardOverlay.transform.Find("Card/SkipButton");
-        Button tryButton = tryTransform != null ? tryTransform.GetComponent<Button>() : null;
-        Button closeButton = closeTransform != null ? closeTransform.GetComponent<Button>() : null;
-        Button skipButton = skipTransform != null ? skipTransform.GetComponent<Button>() : null;
-        if (closeButton == null && skipTransform != null)
+        CacheBeatCards();
+        GameObject card = FindBeatCardView(cardId);
+        if (card == null)
         {
-            closeButton = skipButton;
-        }
-        if (closeButton == null)
-        {
-            closeButton = tryButton;
+            Debug.LogWarning("OceanRhythmUIController: Missing editable beat card '" + BeatCardName(cardId) + "'. Add it under OceanRoot/BeatCardOverlay/Cards.");
+            if (onClose != null)
+            {
+                onClose.Invoke();
+            }
+            return;
         }
 
-        if (title != null)
+        HideBeatCardViews();
+        beatCardOverlay.SetActive(true);
+        beatCardOpen = true;
+        card.SetActive(true);
+        BindBeatCardCloseButtons(card.transform, onClose);
+    }
+
+    private OceanBeatCardId CardIdForLesson(OceanLesson lesson)
+    {
+        if (lesson == null)
         {
-            title.text = cardTitle;
+            return OceanBeatCardId.FourFour;
         }
-        if (pattern != null)
+
+        if (lesson.beatsPerBar == 3)
         {
-            pattern.text = cardPattern;
+            return OceanBeatCardId.ThreeFour;
         }
-        if (body != null)
+        if (lesson.beatsPerBar == 2)
         {
-            body.text = cardBody;
+            return OceanBeatCardId.TwoFour;
         }
-        if (tryButton != null)
+        if (lesson.beatsPerBar == 6)
         {
-            tryButton.onClick.RemoveAllListeners();
-            tryButton.gameObject.SetActive(tryButton == closeButton);
+            return OceanBeatCardId.SixEight;
         }
-        if (skipButton != null)
+
+        return OceanBeatCardId.FourFour;
+    }
+
+    private void CacheBeatCards()
+    {
+        beatCardViews.Clear();
+        beatCardRoot = null;
+        if (beatCardOverlay == null)
         {
-            skipButton.onClick.RemoveAllListeners();
-            skipButton.gameObject.SetActive(skipButton == closeButton);
+            return;
         }
-        if (closeButton != null)
+
+        beatCardRoot = beatCardOverlay.transform.Find("Cards");
+        CacheBeatCardView(OceanBeatCardId.Intro);
+        CacheBeatCardView(OceanBeatCardId.FourFour);
+        CacheBeatCardView(OceanBeatCardId.ThreeFour);
+        CacheBeatCardView(OceanBeatCardId.TwoFour);
+        CacheBeatCardView(OceanBeatCardId.SixEight);
+    }
+
+    private void CacheBeatCardView(OceanBeatCardId cardId)
+    {
+        Transform view = beatCardRoot != null ? beatCardRoot.Find(BeatCardName(cardId)) : null;
+        if (view == null && cardId == OceanBeatCardId.FourFour)
         {
-            Text closeButtonText = closeButton.GetComponentInChildren<Text>(true);
-            if (closeButtonText != null)
+            view = beatCardOverlay.transform.Find("Card");
+        }
+
+        if (view != null)
+        {
+            beatCardViews[cardId] = view.gameObject;
+        }
+    }
+
+    private GameObject FindBeatCardView(OceanBeatCardId cardId)
+    {
+        GameObject view;
+        if (beatCardViews.TryGetValue(cardId, out view) && view != null)
+        {
+            return view;
+        }
+
+        return null;
+    }
+
+    private void HideBeatCardViews()
+    {
+        for (int i = 0; i < beatCardOverlay.transform.childCount; i++)
+        {
+            Transform child = beatCardOverlay.transform.GetChild(i);
+            if (child != null && child.name == "Card")
             {
-                closeButtonText.text = "Close";
+                child.gameObject.SetActive(false);
             }
-            closeButton.gameObject.SetActive(true);
-            closeButton.onClick.RemoveAllListeners();
-            closeButton.onClick.AddListener(delegate
-            {
-                HideBeatCard();
-                if (onClose != null)
-                {
-                    onClose.Invoke();
-                }
-            });
         }
+
+        if (beatCardRoot == null && beatCardOverlay != null)
+        {
+            beatCardRoot = beatCardOverlay.transform.Find("Cards");
+        }
+        if (beatCardRoot == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < beatCardRoot.childCount; i++)
+        {
+            beatCardRoot.GetChild(i).gameObject.SetActive(false);
+        }
+    }
+
+    private void BindBeatCardCloseButtons(Transform card, UnityEngine.Events.UnityAction onClose)
+    {
+        bool bound = false;
+        bound |= BindBeatCardCloseButton(card, "CloseButton", onClose);
+        bound |= BindBeatCardCloseButton(card, "TryButton", onClose);
+        bound |= BindBeatCardCloseButton(card, "SkipButton", onClose);
+
+        if (!bound)
+        {
+            Debug.LogWarning("OceanRhythmUIController: Beat card '" + card.name + "' has no CloseButton, TryButton, or SkipButton.");
+        }
+    }
+
+    private bool BindBeatCardCloseButton(Transform card, string childName, UnityEngine.Events.UnityAction onClose)
+    {
+        Transform child = card != null ? card.Find(childName) : null;
+        if (child == null)
+        {
+            return false;
+        }
+
+        Button button = child.GetComponent<Button>();
+        if (button == null)
+        {
+            button = child.gameObject.AddComponent<Button>();
+            Graphic graphic = child.GetComponent<Graphic>();
+            if (graphic != null)
+            {
+                button.targetGraphic = graphic;
+            }
+        }
+
+        button.onClick.RemoveAllListeners();
+        button.onClick.AddListener(delegate
+        {
+            HideBeatCard();
+            if (onClose != null)
+            {
+                onClose.Invoke();
+            }
+        });
+
+        Image image = child.GetComponent<Image>();
+        if (image != null)
+        {
+            image.raycastTarget = true;
+        }
+        return true;
+    }
+
+    private string BeatCardName(OceanBeatCardId cardId)
+    {
+        if (cardId == OceanBeatCardId.Intro)
+        {
+            return "IntroCard";
+        }
+        if (cardId == OceanBeatCardId.ThreeFour)
+        {
+            return "ThreeFourCard";
+        }
+        if (cardId == OceanBeatCardId.TwoFour)
+        {
+            return "TwoFourCard";
+        }
+        if (cardId == OceanBeatCardId.SixEight)
+        {
+            return "SixEightCard";
+        }
+
+        return "FourFourCard";
     }
 
     public bool IsBeatCardOpen()
@@ -858,6 +1047,12 @@ public class OceanRhythmUIController : MonoBehaviour
             return ApplyFreePondSelection(null);
         }
 
+        if (IsFreePondPointerBlocked())
+        {
+            ClearPondHover();
+            return currentFreePondSelection;
+        }
+
         OceanPondAnimal hovered = FindClosestFishToMouse(165f);
         for (int i = 0; i < pondAnimals.Count; i++)
         {
@@ -883,16 +1078,16 @@ public class OceanRhythmUIController : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0))
         {
+            if (IsPointerOverBlockingOceanUi())
+            {
+                return currentFreePondSelection;
+            }
+
             if (hovered != null)
             {
                 keyboardSelectedIndex = pondAnimals.IndexOf(hovered);
                 keyboardSelectionHoldUntil = 0f;
                 return ApplyFreePondSelection(hovered);
-            }
-
-            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
-            {
-                return currentFreePondSelection;
             }
 
             return ApplyFreePondSelection(null);
@@ -908,6 +1103,114 @@ public class OceanRhythmUIController : MonoBehaviour
         }
 
         return currentFreePondSelection;
+    }
+
+    private bool IsFreePondPointerBlocked()
+    {
+        return IsOverlayActive(bucketAlbumOverlay)
+            || IsOverlayActive(parentHelpOverlay)
+            || IsOverlayActive(pondCompleteOverlay)
+            || IsOverlayActive(completeOverlay)
+            || IsOverlayActive(soundMatchOverlay)
+            || IsBeatCardOpen();
+    }
+
+    private bool IsOverlayActive(GameObject overlay)
+    {
+        return overlay != null && overlay.activeInHierarchy;
+    }
+
+    private bool IsPointerOverBlockingOceanUi()
+    {
+        if (EventSystem.current == null)
+        {
+            return false;
+        }
+
+        if (IsPointerOverBlockingOceanUi(Input.mousePosition, -1))
+        {
+            return true;
+        }
+
+        if (Input.touchCount <= 0)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < Input.touchCount; i++)
+        {
+            Touch touch = Input.GetTouch(i);
+            if (IsPointerOverBlockingOceanUi(touch.position, touch.fingerId))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool IsPointerOverBlockingOceanUi(Vector2 screenPosition, int pointerId)
+    {
+        PointerEventData eventData = new PointerEventData(EventSystem.current);
+        eventData.position = screenPosition;
+        eventData.pointerId = pointerId;
+
+        List<RaycastResult> results = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(eventData, results);
+        for (int i = 0; i < results.Count; i++)
+        {
+            GameObject hit = results[i].gameObject;
+            if (hit == null || !hit.activeInHierarchy)
+            {
+                continue;
+            }
+
+            Transform hitTransform = hit.transform;
+            if (IsTransformWithin(hitTransform, pondLayer))
+            {
+                continue;
+            }
+
+            Selectable selectable = hit.GetComponentInParent<Selectable>();
+            if (selectable != null && selectable.gameObject.activeInHierarchy)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool IsTransformWithin(Transform child, Transform possibleParent)
+    {
+        if (child == null || possibleParent == null)
+        {
+            return false;
+        }
+
+        Transform current = child;
+        while (current != null)
+        {
+            if (current == possibleParent)
+            {
+                return true;
+            }
+
+            current = current.parent;
+        }
+
+        return false;
+    }
+
+    private void ClearPondHover()
+    {
+        for (int i = 0; i < pondAnimals.Count; i++)
+        {
+            if (pondAnimals[i] != null)
+            {
+                pondAnimals[i].SetHovered(false);
+            }
+        }
     }
 
     private OceanPondAnimal FindClosestFishToMouse(float maxDistance)
@@ -1780,18 +2083,31 @@ public class OceanRhythmUIController : MonoBehaviour
         Image shade = beatCardOverlay.AddComponent<Image>();
         shade.color = new Color(0.01f, 0.07f, 0.1f, 0.68f);
 
-        GameObject card = CreatePanel(beatCardOverlay.transform, "Card", new Color(0.05f, 0.36f, 0.46f, 0.98f));
+        GameObject cards = CreateRect(beatCardOverlay.transform, "Cards", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero).gameObject;
+        CreateBeatCardView(cards.transform, "IntroCard", "Little Rhythm Ocean", "Feel 2/4, 3/4, 4/4, and 6/8", "Pick a sea friend and listen first. Then tap with the bright bubbles to feel the beat and bring the fish home.");
+        CreateBeatCardView(cards.transform, "FourFourCard", "4/4 Walking Beat", "STRONG  soft  soft  soft", "A walking beat feels steady: one strong step, then three soft steps.");
+        CreateBeatCardView(cards.transform, "ThreeFourCard", "3/4 Sway Beat", "STRONG  soft  soft", "A sway beat rocks like a boat: strong, soft, soft.");
+        CreateBeatCardView(cards.transform, "TwoFourCard", "2/4 March Beat", "STRONG  soft", "A march beat steps left and right: strong, soft.");
+        CreateBeatCardView(cards.transform, "SixEightCard", "6/8 Wave Beat", "STRONG  soft  soft   STRONG  soft  soft", "A wave beat rolls in two groups: strong soft soft, strong soft soft.");
+        CacheBeatCards();
+        HideBeatCardViews();
+    }
+
+    private GameObject CreateBeatCardView(Transform parent, string name, string titleTextValue, string patternTextValue, string bodyTextValue)
+    {
+        GameObject card = CreatePanel(parent, name, new Color(0.05f, 0.36f, 0.46f, 0.98f));
         RectTransform cardRect = card.GetComponent<RectTransform>();
         cardRect.anchorMin = new Vector2(0.5f, 0.5f);
         cardRect.anchorMax = new Vector2(0.5f, 0.5f);
         cardRect.anchoredPosition = Vector2.zero;
         cardRect.sizeDelta = new Vector2(780f, 420f);
 
-        CreateText(card.transform, "Title", "4/4 Walking Beat", new Vector2(0.5f, 0.78f), Vector2.zero, new Vector2(680f, 62f), 42, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
-        CreateText(card.transform, "Pattern", "STRONG soft soft soft", new Vector2(0.5f, 0.58f), Vector2.zero, new Vector2(690f, 58f), 30, FontStyle.Bold, new Color(1f, 0.86f, 0.18f), TextAnchor.MiddleCenter);
-        CreateText(card.transform, "Body", "Tap with the bright bubbles.", new Vector2(0.5f, 0.42f), Vector2.zero, new Vector2(680f, 88f), 26, FontStyle.Normal, Color.white, TextAnchor.MiddleCenter);
-        CreateButton(card.transform, "TryButton", "Try it", new Vector2(0.35f, 0.18f), Vector2.zero, new Vector2(220f, 64f), delegate { });
-        CreateButton(card.transform, "SkipButton", "Skip", new Vector2(0.65f, 0.18f), Vector2.zero, new Vector2(220f, 64f), delegate { });
+        CreateText(card.transform, "Title", titleTextValue, new Vector2(0.5f, 0.78f), Vector2.zero, new Vector2(680f, 62f), 42, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
+        CreateText(card.transform, "Pattern", patternTextValue, new Vector2(0.5f, 0.58f), Vector2.zero, new Vector2(690f, 58f), 30, FontStyle.Bold, new Color(1f, 0.86f, 0.18f), TextAnchor.MiddleCenter);
+        CreateText(card.transform, "Body", bodyTextValue, new Vector2(0.5f, 0.42f), Vector2.zero, new Vector2(680f, 88f), 26, FontStyle.Normal, Color.white, TextAnchor.MiddleCenter);
+        CreateButton(card.transform, "CloseButton", "Close", new Vector2(0.5f, 0.18f), Vector2.zero, new Vector2(220f, 64f), delegate { });
+        card.SetActive(false);
+        return card;
     }
 
     private void CreateBucketUi(Transform parent)
@@ -1851,11 +2167,23 @@ public class OceanRhythmUIController : MonoBehaviour
         cardRect.anchoredPosition = Vector2.zero;
         cardRect.sizeDelta = new Vector2(1080f, 620f);
 
-        CreateText(card.transform, "Title", "My Rhythm Bucket", new Vector2(0.5f, 0.92f), Vector2.zero, new Vector2(850f, 54f), 42, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
+        GameObject header = CreateRect(card.transform, "Header", new Vector2(0.5f, 0.91f), new Vector2(0.5f, 0.91f), Vector2.zero, new Vector2(980f, 70f)).gameObject;
+        CreateText(header.transform, "Title", "My Rhythm Bucket", new Vector2(0.34f, 0.5f), Vector2.zero, new Vector2(470f, 54f), 42, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft);
+        bucketAlbumShellText = CreateCounter(header.transform, "Shells", "Shells", "0", new Vector2(0.68f, 0.5f));
+        bucketAlbumPearlText = CreateCounter(header.transform, "Pearls", "Pearls", "0", new Vector2(0.83f, 0.5f));
+        CreateButton(header.transform, "CloseButton", "Close", new Vector2(0.96f, 0.5f), Vector2.zero, new Vector2(120f, 48f), CloseBucketAlbum);
+
         CreateBucketPreview(card.transform);
         CreateDecorationLibrary(card.transform);
-        bucketHintText = CreateText(card.transform, "Hint", "Tap a locked decoration to see how to unlock it.", new Vector2(0.78f, 0.52f), Vector2.zero, new Vector2(290f, 300f), 25, FontStyle.Bold, new Color(1f, 0.94f, 0.68f), TextAnchor.MiddleCenter);
-        CreateButton(card.transform, "CloseButton", "Close", new Vector2(0.5f, 0.075f), Vector2.zero, new Vector2(200f, 56f), delegate { bucketAlbumOverlay.SetActive(false); });
+        CreateDecorationDetail(card.transform);
+        CreateButton(card.transform, "CloseButton", "Close", new Vector2(0.5f, 0.075f), Vector2.zero, new Vector2(200f, 56f), CloseBucketAlbum);
+    }
+
+    private Text CreateCounter(Transform parent, string name, string label, string value, Vector2 anchor)
+    {
+        GameObject counter = CreateRect(parent, name, anchor, anchor, Vector2.zero, new Vector2(142f, 48f)).gameObject;
+        CreateText(counter.transform, "Label", label, new Vector2(0.5f, 0.72f), Vector2.zero, new Vector2(132f, 20f), 15, FontStyle.Bold, new Color(0.78f, 0.95f, 1f), TextAnchor.MiddleCenter);
+        return CreateText(counter.transform, "Value", value, new Vector2(0.5f, 0.28f), Vector2.zero, new Vector2(132f, 24f), 22, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
     }
 
     private void CreateRewardToast(Transform parent)
@@ -1981,26 +2309,99 @@ public class OceanRhythmUIController : MonoBehaviour
         GameObject obj = CreateRect(parent, slotId.ToString(), anchor, anchor, Vector2.zero, OceanVisual.BucketSlotSize).gameObject;
         OceanBucketSlot slot = obj.AddComponent<OceanBucketSlot>();
         Sprite slotSprite = manager != null && manager.GetBucketSlotSprite() != null ? manager.GetBucketSlotSprite() : circleSprite;
-        slot.Build(this, slotId, slotSprite, uiFont);
+        slot.Build(this, slotId, slotSprite, GetBucketSlotHighlightSprite(), uiFont);
         bucketSlots.Add(slot);
     }
 
     private void CreateDecorationLibrary(Transform parent)
     {
-        GameObject library = CreatePanel(parent, "DecorationLibrary", new Color(1f, 1f, 1f, 0.08f));
+        GameObject library = CreatePanel(parent, "DecorationCollection", new Color(1f, 1f, 1f, 0.08f));
         SetRaycastTarget(library, false);
         RectTransform rect = library.GetComponent<RectTransform>();
-        rect.anchorMin = new Vector2(0.17f, 0.5f);
-        rect.anchorMax = new Vector2(0.17f, 0.5f);
+        rect.anchorMin = new Vector2(0.48f, 0.49f);
+        rect.anchorMax = new Vector2(0.48f, 0.49f);
         rect.anchoredPosition = Vector2.zero;
-        rect.sizeDelta = new Vector2(270f, 400f);
+        rect.sizeDelta = new Vector2(330f, 410f);
 
-        CreateText(library.transform, "LibraryTitle", "Decorations", new Vector2(0.5f, 0.92f), Vector2.zero, new Vector2(230f, 34f), 25, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
-        decorationLibraryRoot = CreateRect(library.transform, "Grid", new Vector2(0.5f, 0.45f), new Vector2(0.5f, 0.45f), Vector2.zero, new Vector2(226f, 300f));
+        CreateText(library.transform, "Title", "My Decorations", new Vector2(0.5f, 0.92f), Vector2.zero, new Vector2(290f, 34f), 25, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
+        decorationLibraryRoot = CreateRect(library.transform, "Grid", new Vector2(0.5f, 0.44f), new Vector2(0.5f, 0.44f), Vector2.zero, new Vector2(286f, 320f));
         GridLayoutGroup grid = decorationLibraryRoot.gameObject.AddComponent<GridLayoutGroup>();
-        grid.cellSize = new Vector2(96f, 84f);
+        grid.cellSize = new Vector2(132f, 94f);
         grid.spacing = new Vector2(12f, 12f);
         grid.childAlignment = TextAnchor.MiddleCenter;
+
+        unlockedDecorationTemplate = CreateDecorationTemplate(decorationLibraryRoot, "UnlockedItemTemplate", new Color(1f, 1f, 1f, 0.92f));
+        lockedDecorationTemplate = CreateDecorationTemplate(decorationLibraryRoot, "LockedItemTemplate", new Color(0.18f, 0.28f, 0.34f, 0.92f));
+        unlockedDecorationTemplate.SetActive(false);
+        lockedDecorationTemplate.SetActive(false);
+
+        bucketAlbumPrevPageButton = CreateButton(library.transform, "PrevPageButton", "<", new Vector2(0.08f, 0.5f), Vector2.zero, new Vector2(56f, 72f), delegate { ChangeBucketAlbumPage(-1); });
+        bucketAlbumNextPageButton = CreateButton(library.transform, "NextPageButton", ">", new Vector2(0.92f, 0.5f), Vector2.zero, new Vector2(56f, 72f), delegate { ChangeBucketAlbumPage(1); });
+        bucketAlbumPageText = CreateText(library.transform, "PageText", "1 / 1", new Vector2(0.5f, 0.06f), Vector2.zero, new Vector2(120f, 30f), 16, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
+    }
+
+    private GameObject CreateDecorationTemplate(Transform parent, string name, Color background)
+    {
+        GameObject item = CreatePanel(parent, name, background);
+        SetRaycastTarget(item, true);
+        CreateRect(item.transform, "SelectedBadge", new Vector2(0.14f, 0.82f), new Vector2(0.14f, 0.82f), Vector2.zero, new Vector2(24f, 24f)).gameObject.AddComponent<Image>().color = new Color(1f, 0.86f, 0.18f, 0.95f);
+        CreateRect(item.transform, "EquippedBadge", new Vector2(0.86f, 0.82f), new Vector2(0.86f, 0.82f), Vector2.zero, new Vector2(24f, 24f)).gameObject.AddComponent<Image>().color = new Color(0.27f, 0.95f, 0.54f, 0.95f);
+        CreateRect(item.transform, "LockBadge", new Vector2(0.86f, 0.82f), new Vector2(0.86f, 0.82f), Vector2.zero, new Vector2(24f, 24f)).gameObject.AddComponent<Image>().color = new Color(1f, 0.94f, 0.68f, 0.95f);
+        Image icon = CreateRect(item.transform, "Icon", new Vector2(0.26f, 0.54f), new Vector2(0.26f, 0.54f), Vector2.zero, new Vector2(48f, 48f)).gameObject.AddComponent<Image>();
+        icon.preserveAspect = true;
+        icon.raycastTarget = false;
+        CreateText(item.transform, "Name", "Decoration", new Vector2(0.66f, 0.68f), Vector2.zero, new Vector2(78f, 24f), 14, FontStyle.Bold, new Color(0.02f, 0.15f, 0.22f), TextAnchor.MiddleCenter);
+        CreateText(item.transform, "Status", "Use", new Vector2(0.66f, 0.42f), Vector2.zero, new Vector2(78f, 22f), 12, FontStyle.Bold, new Color(0.12f, 0.28f, 0.48f), TextAnchor.MiddleCenter);
+        GameObject progress = CreatePanel(item.transform, "Progress", new Color(1f, 1f, 1f, 0.16f));
+        RectTransform progressRect = progress.GetComponent<RectTransform>();
+        progressRect.anchorMin = new Vector2(0.5f, 0.14f);
+        progressRect.anchorMax = new Vector2(0.5f, 0.14f);
+        progressRect.anchoredPosition = Vector2.zero;
+        progressRect.sizeDelta = new Vector2(104f, 12f);
+        Image fill = CreateRect(progress.transform, "Fill", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(104f, 12f)).gameObject.AddComponent<Image>();
+        fill.color = new Color(0.27f, 0.95f, 0.54f, 1f);
+        fill.type = Image.Type.Filled;
+        fill.fillMethod = Image.FillMethod.Horizontal;
+        CreateText(progress.transform, "Value", "", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(104f, 18f), 10, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
+        CreateText(item.transform, "Requirement", "", new Vector2(0.5f, 0.02f), Vector2.zero, new Vector2(116f, 18f), 10, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
+        return item;
+    }
+
+    private void CreateDecorationDetail(Transform parent)
+    {
+        GameObject detail = CreatePanel(parent, "DecorationDetail", new Color(1f, 1f, 1f, 0.08f));
+        SetRaycastTarget(detail, false);
+        RectTransform rect = detail.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.81f, 0.49f);
+        rect.anchorMax = new Vector2(0.81f, 0.49f);
+        rect.anchoredPosition = Vector2.zero;
+        rect.sizeDelta = new Vector2(280f, 410f);
+
+        decorationDetailIcon = CreateRect(detail.transform, "Icon", new Vector2(0.5f, 0.8f), new Vector2(0.5f, 0.8f), Vector2.zero, new Vector2(82f, 82f)).gameObject.AddComponent<Image>();
+        decorationDetailIcon.preserveAspect = true;
+        decorationDetailIcon.raycastTarget = false;
+        decorationDetailNameText = CreateText(detail.transform, "Name", "Decoration", new Vector2(0.5f, 0.63f), Vector2.zero, new Vector2(240f, 34f), 25, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
+        decorationDetailStatusText = CreateText(detail.transform, "Status", "Tap a decoration", new Vector2(0.5f, 0.55f), Vector2.zero, new Vector2(240f, 28f), 18, FontStyle.Bold, new Color(1f, 0.94f, 0.68f), TextAnchor.MiddleCenter);
+        GameObject progress = CreatePanel(detail.transform, "Progress", new Color(1f, 1f, 1f, 0.16f));
+        RectTransform progressRect = progress.GetComponent<RectTransform>();
+        progressRect.anchorMin = new Vector2(0.5f, 0.43f);
+        progressRect.anchorMax = new Vector2(0.5f, 0.43f);
+        progressRect.anchoredPosition = Vector2.zero;
+        progressRect.sizeDelta = new Vector2(210f, 20f);
+        decorationDetailProgressFill = CreateRect(progress.transform, "Fill", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(210f, 20f)).gameObject.AddComponent<Image>();
+        decorationDetailProgressFill.color = new Color(0.27f, 0.95f, 0.54f, 1f);
+        decorationDetailProgressFill.type = Image.Type.Filled;
+        decorationDetailProgressFill.fillMethod = Image.FillMethod.Horizontal;
+        decorationDetailProgressText = CreateText(progress.transform, "Value", "", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(210f, 22f), 14, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
+        GameObject requirement = CreateRect(detail.transform, "Requirement", new Vector2(0.5f, 0.32f), new Vector2(0.5f, 0.32f), Vector2.zero, new Vector2(230f, 58f)).gameObject;
+        decorationDetailRequirementIcon = CreateRect(requirement.transform, "Icon", new Vector2(0.16f, 0.5f), new Vector2(0.16f, 0.5f), Vector2.zero, new Vector2(34f, 34f)).gameObject.AddComponent<Image>();
+        decorationDetailRequirementIcon.preserveAspect = true;
+        decorationDetailRequirementIcon.raycastTarget = false;
+        decorationDetailRequirementText = CreateText(requirement.transform, "Text", "Choose a decoration", new Vector2(0.62f, 0.5f), Vector2.zero, new Vector2(170f, 50f), 16, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
+        decorationDetailActionButton = CreateButton(detail.transform, "ActionButton", "Use", new Vector2(0.5f, 0.18f), Vector2.zero, new Vector2(180f, 54f), delegate { SetChoosingBucketSlot(true); });
+        decorationDetailActionObject = decorationDetailActionButton.gameObject;
+        decorationDetailActionText = decorationDetailActionObject.GetComponentInChildren<Text>(true);
+        bucketHintText = CreateText(detail.transform, "Hint", "Tap a decoration to see how to unlock it.", new Vector2(0.5f, 0.06f), Vector2.zero, new Vector2(240f, 42f), 15, FontStyle.Bold, new Color(1f, 0.94f, 0.68f), TextAnchor.MiddleCenter);
     }
 
     private void RefreshBucketWorkshop(OceanBucketInventory inventory)
@@ -2010,9 +2411,35 @@ public class OceanRhythmUIController : MonoBehaviour
             return;
         }
 
+        choosingBucketSlot = false;
+        if (!hasSelectedDecoration)
+        {
+            selectedDecoration = inventory.SelectedDecoration;
+            hasSelectedDecoration = true;
+        }
+        KeepSelectedDecorationPageVisible();
+
+        RefreshBucketHeader(inventory);
         RefreshBucketSlots(inventory);
         RefreshDecorationLibrary(inventory);
-        ShowBucketHint("Drag unlocked decorations onto the bucket spots");
+        RefreshDecorationDetail(inventory);
+    }
+
+    private void RefreshBucketHeader(OceanBucketInventory inventory)
+    {
+        if (inventory == null)
+        {
+            return;
+        }
+
+        if (bucketAlbumShellText != null)
+        {
+            bucketAlbumShellText.text = inventory.Shells.ToString();
+        }
+        if (bucketAlbumPearlText != null)
+        {
+            bucketAlbumPearlText.text = inventory.MusicPearls.ToString();
+        }
     }
 
     private void RefreshBucketSlots(OceanBucketInventory inventory)
@@ -2039,47 +2466,270 @@ public class OceanRhythmUIController : MonoBehaviour
 
     private void RefreshDecorationLibrary(OceanBucketInventory inventory)
     {
-        if (decorationLibraryRoot == null)
+        if (decorationLibraryRoot == null || inventory == null)
         {
             return;
         }
 
         for (int i = decorationLibraryRoot.childCount - 1; i >= 0; i--)
         {
-            DestroyObject(decorationLibraryRoot.GetChild(i).gameObject);
+            Transform child = decorationLibraryRoot.GetChild(i);
+            if (child != null && (child.name == "UnlockedItemTemplate" || child.name == "LockedItemTemplate"))
+            {
+                child.gameObject.SetActive(false);
+                continue;
+            }
+
+            DestroyObject(child.gameObject);
         }
 
         OceanDecorationReward[] decorations = OceanBucketInventory.GetAllDecorations();
-        for (int i = 0; i < decorations.Length; i++)
+        int pageCount = BucketAlbumPageCount(decorations);
+        bucketAlbumPageIndex = Mathf.Clamp(bucketAlbumPageIndex, 0, pageCount - 1);
+        int firstItem = bucketAlbumPageIndex * BucketAlbumItemsPerPage;
+        int lastItem = Mathf.Min(firstItem + BucketAlbumItemsPerPage, decorations.Length);
+        for (int i = firstItem; i < lastItem; i++)
         {
             CreateDecorationItem(decorationLibraryRoot, decorations[i], inventory);
+        }
+        RefreshBucketAlbumPaging(decorations);
+    }
+
+    private void ChangeBucketAlbumPage(int delta)
+    {
+        OceanBucketInventory inventory = manager != null ? manager.GetBucketInventory() : null;
+        if (inventory == null)
+        {
+            return;
+        }
+
+        OceanDecorationReward[] decorations = OceanBucketInventory.GetAllDecorations();
+        int pageCount = BucketAlbumPageCount(decorations);
+        int newPage = Mathf.Clamp(bucketAlbumPageIndex + delta, 0, pageCount - 1);
+        if (newPage == bucketAlbumPageIndex)
+        {
+            RefreshBucketAlbumPaging(decorations);
+            return;
+        }
+
+        bucketAlbumPageIndex = newPage;
+        choosingBucketSlot = false;
+        ClearBucketSlotHighlights();
+        RefreshDecorationLibrary(inventory);
+        RefreshDecorationDetail(inventory);
+    }
+
+    private int BucketAlbumPageCount(OceanDecorationReward[] decorations)
+    {
+        int count = decorations != null ? decorations.Length : 0;
+        return Mathf.Max(1, Mathf.CeilToInt((float)count / BucketAlbumItemsPerPage));
+    }
+
+    private void KeepSelectedDecorationPageVisible()
+    {
+        if (!hasSelectedDecoration)
+        {
+            bucketAlbumPageIndex = 0;
+            return;
+        }
+
+        OceanDecorationReward[] decorations = OceanBucketInventory.GetAllDecorations();
+        int selectedIndex = -1;
+        for (int i = 0; i < decorations.Length; i++)
+        {
+            if (decorations[i] == selectedDecoration)
+            {
+                selectedIndex = i;
+                break;
+            }
+        }
+
+        if (selectedIndex < 0)
+        {
+            bucketAlbumPageIndex = 0;
+            return;
+        }
+
+        bucketAlbumPageIndex = Mathf.Clamp(selectedIndex / BucketAlbumItemsPerPage, 0, BucketAlbumPageCount(decorations) - 1);
+    }
+
+    private void RefreshBucketAlbumPaging(OceanDecorationReward[] decorations)
+    {
+        int pageCount = BucketAlbumPageCount(decorations);
+        bucketAlbumPageIndex = Mathf.Clamp(bucketAlbumPageIndex, 0, pageCount - 1);
+
+        if (bucketAlbumPrevPageButton != null)
+        {
+            bucketAlbumPrevPageButton.interactable = bucketAlbumPageIndex > 0;
+        }
+        if (bucketAlbumNextPageButton != null)
+        {
+            bucketAlbumNextPageButton.interactable = bucketAlbumPageIndex < pageCount - 1;
+        }
+        if (bucketAlbumPageText != null)
+        {
+            bucketAlbumPageText.text = (bucketAlbumPageIndex + 1) + " / " + pageCount;
         }
     }
 
     private void CreateDecorationItem(Transform parent, OceanDecorationReward reward, OceanBucketInventory inventory)
     {
         bool unlocked = inventory.IsDecorationUnlocked(reward);
-        GameObject item = CreatePanel(parent, reward.ToString() + "Item", unlocked ? new Color(1f, 1f, 1f, 0.9f) : new Color(0.25f, 0.31f, 0.36f, 0.88f));
+        GameObject template = unlocked ? unlockedDecorationTemplate : lockedDecorationTemplate;
+        GameObject item = template != null ? Instantiate(template, parent, false) : CreatePanel(parent, reward.ToString() + "Item", unlocked ? new Color(1f, 1f, 1f, 0.9f) : new Color(0.25f, 0.31f, 0.36f, 0.88f));
+        item.name = reward + "Item";
+        item.SetActive(true);
         SetRaycastTarget(item, true);
-        Image icon = CreateRect(item.transform, "Icon", new Vector2(0.5f, 0.58f), new Vector2(0.5f, 0.58f), Vector2.zero, new Vector2(44f, 44f)).gameObject.AddComponent<Image>();
+
+        bool equipped = IsDecorationEquipped(inventory, reward);
+        bool selected = hasSelectedDecoration && selectedDecoration == reward;
+        OceanDecorationUnlockRequirement requirement = inventory.GetUnlockProgress(reward);
+
+        Image icon = FindImage(item.transform, "Icon");
+        if (icon == null)
+        {
+            icon = CreateRect(item.transform, "Icon", new Vector2(0.5f, 0.58f), new Vector2(0.5f, 0.58f), Vector2.zero, new Vector2(44f, 44f)).gameObject.AddComponent<Image>();
+        }
         icon.sprite = GetDecorationSprite(reward);
         icon.color = unlocked ? ColorForDecoration(reward) : new Color(0.55f, 0.6f, 0.65f, 0.55f);
         icon.raycastTarget = false;
         icon.preserveAspect = true;
 
-        CreateText(item.transform, "Label", unlocked ? DecorationLabel(reward) : "LOCK", new Vector2(0.5f, 0.18f), Vector2.zero, new Vector2(90f, 22f), 14, FontStyle.Bold, unlocked ? new Color(0.02f, 0.15f, 0.22f) : Color.white, TextAnchor.MiddleCenter);
-        if (!unlocked)
+        SetOptionalText(item.transform, "Name", DecorationLabel(reward));
+        SetOptionalText(item.transform, "Label", unlocked ? DecorationLabel(reward) : "Locked");
+        SetOptionalText(item.transform, "Status", DecorationItemStatus(unlocked, equipped, selected));
+        SetOptionalText(item.transform, "Progress/Value", ProgressText(requirement, unlocked));
+
+        Image progressFill = FindImage(item.transform, "Progress/Fill");
+        if (progressFill != null)
         {
-            Image lockIcon = CreateRect(item.transform, "LockIcon", new Vector2(0.78f, 0.77f), new Vector2(0.78f, 0.77f), Vector2.zero, new Vector2(24f, 24f)).gameObject.AddComponent<Image>();
-            Sprite lockSprite = manager != null ? manager.GetLockSprite() : null;
-            lockIcon.sprite = lockSprite != null ? lockSprite : circleSprite;
-            lockIcon.color = new Color(1f, 0.94f, 0.68f, 0.95f);
-            lockIcon.preserveAspect = true;
-            lockIcon.raycastTarget = false;
+            progressFill.fillAmount = UnlockProgress(requirement, unlocked);
         }
 
-        OceanDecorationDragItem dragItem = item.AddComponent<OceanDecorationDragItem>();
+        SetOptionalActive(item.transform, "LockBadge", !unlocked);
+        SetOptionalActive(item.transform, "SelectedBadge", selected && !equipped);
+        SetOptionalActive(item.transform, "EquippedBadge", equipped);
+        SetOptionalText(item.transform, "Requirement", RequirementText(requirement, unlocked, reward));
+
+        OceanDecorationDragItem dragItem = item.GetComponent<OceanDecorationDragItem>();
+        if (dragItem == null)
+        {
+            dragItem = item.AddComponent<OceanDecorationDragItem>();
+        }
         dragItem.Build(this, reward, unlocked);
+
+        Button button = item.GetComponent<Button>();
+        if (button == null)
+        {
+            button = item.AddComponent<Button>();
+        }
+        Graphic graphic = item.GetComponent<Graphic>();
+        if (button.targetGraphic == null && graphic != null)
+        {
+            button.targetGraphic = graphic;
+        }
+        button.onClick.RemoveAllListeners();
+        button.onClick.AddListener(delegate
+        {
+            SelectDecoration(reward);
+        });
+    }
+
+    private void SelectDecoration(OceanDecorationReward reward)
+    {
+        OceanBucketInventory inventory = manager != null ? manager.GetBucketInventory() : null;
+        if (inventory == null)
+        {
+            return;
+        }
+
+        selectedDecoration = reward;
+        hasSelectedDecoration = true;
+        choosingBucketSlot = false;
+        KeepSelectedDecorationPageVisible();
+        ClearBucketSlotHighlights();
+        RefreshDecorationLibrary(inventory);
+        RefreshDecorationDetail(inventory);
+    }
+
+    private void RefreshDecorationDetail(OceanBucketInventory inventory)
+    {
+        if (inventory == null || !hasSelectedDecoration)
+        {
+            return;
+        }
+
+        bool unlocked = inventory.IsDecorationUnlocked(selectedDecoration);
+        bool equipped = IsDecorationEquipped(inventory, selectedDecoration);
+        OceanDecorationUnlockRequirement requirement = inventory.GetUnlockProgress(selectedDecoration);
+
+        if (decorationDetailIcon != null)
+        {
+            decorationDetailIcon.sprite = GetDecorationSprite(selectedDecoration);
+            decorationDetailIcon.color = unlocked ? ColorForDecoration(selectedDecoration) : new Color(0.55f, 0.6f, 0.65f, 0.72f);
+            decorationDetailIcon.preserveAspect = true;
+        }
+        if (decorationDetailNameText != null)
+        {
+            decorationDetailNameText.text = DecorationLabel(selectedDecoration);
+        }
+        if (decorationDetailStatusText != null)
+        {
+            decorationDetailStatusText.text = DetailStatusText(unlocked, equipped);
+        }
+        if (decorationDetailProgressFill != null)
+        {
+            decorationDetailProgressFill.fillAmount = UnlockProgress(requirement, unlocked);
+        }
+        if (decorationDetailProgressText != null)
+        {
+            decorationDetailProgressText.text = ProgressText(requirement, unlocked);
+        }
+        if (decorationDetailRequirementText != null)
+        {
+            decorationDetailRequirementText.text = RequirementText(requirement, unlocked, selectedDecoration);
+        }
+        if (decorationDetailActionButton != null)
+        {
+            decorationDetailActionButton.interactable = unlocked;
+            decorationDetailActionButton.onClick.RemoveAllListeners();
+            decorationDetailActionButton.onClick.AddListener(delegate
+            {
+                SetChoosingBucketSlot(!choosingBucketSlot);
+            });
+        }
+        if (decorationDetailActionObject != null)
+        {
+            decorationDetailActionObject.SetActive(true);
+        }
+        if (decorationDetailActionText != null)
+        {
+            decorationDetailActionText.text = unlocked ? choosingBucketSlot ? "Cancel" : equipped ? "Move" : "Use" : "Locked";
+        }
+
+        ShowBucketHint(unlocked ? choosingBucketSlot ? "Tap a bucket spot" : "Tap Use, then tap a bucket spot" : RequirementText(requirement, false, selectedDecoration));
+    }
+
+    private void SetChoosingBucketSlot(bool value)
+    {
+        OceanBucketInventory inventory = manager != null ? manager.GetBucketInventory() : null;
+        if (inventory == null || !hasSelectedDecoration || !inventory.IsDecorationUnlocked(selectedDecoration))
+        {
+            choosingBucketSlot = false;
+            ClearBucketSlotHighlights();
+            RefreshDecorationDetail(inventory);
+            return;
+        }
+
+        choosingBucketSlot = value;
+        for (int i = 0; i < bucketSlots.Count; i++)
+        {
+            if (bucketSlots[i] != null)
+            {
+                bucketSlots[i].SetHighlighted(choosingBucketSlot);
+            }
+        }
+        RefreshDecorationDetail(inventory);
     }
 
     public void ShowDecorationInfo(OceanDecorationReward reward)
@@ -2090,9 +2740,16 @@ public class OceanRhythmUIController : MonoBehaviour
             return;
         }
 
+        selectedDecoration = reward;
+        hasSelectedDecoration = true;
+        choosingBucketSlot = false;
+        ClearBucketSlotHighlights();
+        RefreshDecorationLibrary(inventory);
+        RefreshDecorationDetail(inventory);
+
         if (inventory.IsDecorationUnlocked(reward))
         {
-            ShowBucketHint("Drag " + reward + " to your bucket");
+            ShowBucketHint("Tap Use, then tap a bucket spot");
             return;
         }
 
@@ -2112,6 +2769,20 @@ public class OceanRhythmUIController : MonoBehaviour
         if (bucketHintText != null)
         {
             bucketHintText.text = text;
+        }
+    }
+
+    private void CloseBucketAlbum()
+    {
+        choosingBucketSlot = false;
+        ClearBucketSlotHighlights();
+        if (bucketAlbumOverlay != null)
+        {
+            bucketAlbumOverlay.SetActive(false);
+        }
+        if (EventSystem.current != null)
+        {
+            EventSystem.current.SetSelectedGameObject(null);
         }
     }
 
@@ -2152,15 +2823,212 @@ public class OceanRhythmUIController : MonoBehaviour
             OceanBucketSlot slot = bucketSlots[i];
             if (slot != null && slot.ContainsScreenPoint(screenPoint))
             {
-                inventory.SetSlotDecoration(slot.slotId, reward);
-                slot.SetDecoration(reward, GetDecorationSprite(reward), ColorForDecoration(reward));
-                UpdateBucket(inventory);
-                ShowBucketHint(DecorationLabel(reward) + " placed on " + slot.slotId);
+                return EquipDecorationToSlot(reward, slot, inventory);
+            }
+        }
+
+        return false;
+    }
+
+    public bool TryEquipSelectedDecorationToSlot(OceanBucketSlot slot)
+    {
+        OceanBucketInventory inventory = manager != null ? manager.GetBucketInventory() : null;
+        if (!choosingBucketSlot || !hasSelectedDecoration || slot == null || inventory == null)
+        {
+            return false;
+        }
+
+        if (!inventory.IsDecorationUnlocked(selectedDecoration))
+        {
+            ShowDecorationInfo(selectedDecoration);
+            return false;
+        }
+
+        return EquipDecorationToSlot(selectedDecoration, slot, inventory);
+    }
+
+    private bool EquipDecorationToSlot(OceanDecorationReward reward, OceanBucketSlot slot, OceanBucketInventory inventory)
+    {
+        if (slot == null || inventory == null || !inventory.IsDecorationUnlocked(reward))
+        {
+            return false;
+        }
+
+        selectedDecoration = reward;
+        hasSelectedDecoration = true;
+        choosingBucketSlot = false;
+        inventory.SetSlotDecoration(slot.slotId, reward);
+        slot.SetDecoration(reward, GetDecorationSprite(reward), ColorForDecoration(reward));
+        UpdateBucket(inventory);
+        RefreshBucketSlots(inventory);
+        RefreshDecorationLibrary(inventory);
+        RefreshDecorationDetail(inventory);
+        ClearBucketSlotHighlights();
+        ShowBucketHint(DecorationLabel(reward) + " placed on " + SlotLabel(slot.slotId));
+        return true;
+    }
+
+    private bool IsDecorationEquipped(OceanBucketInventory inventory, OceanDecorationReward reward)
+    {
+        if (inventory == null)
+        {
+            return false;
+        }
+
+        OceanBucketSlotId[] slots = BucketSlotIds();
+        for (int i = 0; i < slots.Length; i++)
+        {
+            if (inventory.HasSlotDecoration(slots[i]) && inventory.GetSlotDecoration(slots[i]) == reward)
+            {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private OceanBucketSlotId EquippedSlot(OceanBucketInventory inventory, OceanDecorationReward reward)
+    {
+        OceanBucketSlotId[] slots = BucketSlotIds();
+        for (int i = 0; i < slots.Length; i++)
+        {
+            if (inventory != null && inventory.HasSlotDecoration(slots[i]) && inventory.GetSlotDecoration(slots[i]) == reward)
+            {
+                return slots[i];
+            }
+        }
+
+        return OceanBucketSlotId.FrontSlot;
+    }
+
+    private OceanBucketSlotId[] BucketSlotIds()
+    {
+        return new OceanBucketSlotId[]
+        {
+            OceanBucketSlotId.TopSlot,
+            OceanBucketSlotId.LeftSlot,
+            OceanBucketSlotId.RightSlot,
+            OceanBucketSlotId.FrontSlot,
+            OceanBucketSlotId.CharmSlot
+        };
+    }
+
+    private void SetOptionalText(Transform root, string path, string value)
+    {
+        Text text = FindText(root, path);
+        if (text != null)
+        {
+            text.text = value;
+        }
+    }
+
+    private void SetOptionalActive(Transform root, string path, bool active)
+    {
+        Transform child = FindTransform(root, path);
+        if (child != null)
+        {
+            child.gameObject.SetActive(active);
+        }
+    }
+
+    private string DecorationItemStatus(bool unlocked, bool equipped, bool selected)
+    {
+        if (!unlocked)
+        {
+            return "Locked";
+        }
+        if (equipped)
+        {
+            return "Equipped";
+        }
+        if (selected)
+        {
+            return "Selected";
+        }
+
+        return "Use";
+    }
+
+    private string DetailStatusText(bool unlocked, bool equipped)
+    {
+        if (!unlocked)
+        {
+            return "Locked";
+        }
+        if (equipped)
+        {
+            OceanBucketInventory inventory = manager != null ? manager.GetBucketInventory() : null;
+            return "Equipped on " + SlotLabel(EquippedSlot(inventory, selectedDecoration));
+        }
+
+        return "Ready to decorate";
+    }
+
+    private float UnlockProgress(OceanDecorationUnlockRequirement requirement, bool unlocked)
+    {
+        if (unlocked || requirement.requiredCount <= 0)
+        {
+            return 1f;
+        }
+
+        return Mathf.Clamp01((float)requirement.currentCount / requirement.requiredCount);
+    }
+
+    private string ProgressText(OceanDecorationUnlockRequirement requirement, bool unlocked)
+    {
+        if (unlocked || requirement.requiredCount <= 0)
+        {
+            return "Unlocked";
+        }
+
+        return Mathf.Clamp(requirement.currentCount, 0, requirement.requiredCount) + " / " + requirement.requiredCount;
+    }
+
+    private string RequirementText(OceanDecorationUnlockRequirement requirement, bool unlocked, OceanDecorationReward reward)
+    {
+        if (unlocked || requirement.requiredCount <= 0)
+        {
+            return "Unlocked. Choose a bucket spot.";
+        }
+        if (requirement.usesMusicPearls)
+        {
+            return "Earn " + requirement.Remaining + " more Music Pearls";
+        }
+
+        return "Catch " + requirement.Remaining + " more " + FishName(requirement.fishType);
+    }
+
+    private Sprite GetBucketSlotHighlightSprite()
+    {
+        OceanBucketAlbumAssets assets = manager != null ? manager.GetBucketAlbumAssets() : null;
+        if (assets != null && assets.slotHighlightSprite != null)
+        {
+            return assets.slotHighlightSprite;
+        }
+
+        return circleSprite;
+    }
+
+    private string SlotLabel(OceanBucketSlotId slotId)
+    {
+        if (slotId == OceanBucketSlotId.TopSlot)
+        {
+            return "Top";
+        }
+        if (slotId == OceanBucketSlotId.LeftSlot)
+        {
+            return "Left";
+        }
+        if (slotId == OceanBucketSlotId.RightSlot)
+        {
+            return "Right";
+        }
+        if (slotId == OceanBucketSlotId.CharmSlot)
+        {
+            return "Charm";
+        }
+
+        return "Front";
     }
 
     private Sprite GetDecorationSprite(OceanDecorationReward reward)
@@ -2216,147 +3084,6 @@ public class OceanRhythmUIController : MonoBehaviour
         {
             netCursor.Build(circleSprite, manager != null ? manager.GetNetSprite() : null);
         }
-    }
-
-    private void RefreshBucketAlbum(OceanBucketInventory inventory)
-    {
-        if (bucketAlbumOverlay == null || inventory == null)
-        {
-            return;
-        }
-
-        Transform content = bucketAlbumOverlay.transform.Find("Card/Content");
-        if (content == null)
-        {
-            return;
-        }
-
-        for (int i = content.childCount - 1; i >= 0; i--)
-        {
-            DestroyObject(content.GetChild(i).gameObject);
-        }
-
-        VerticalLayoutGroup layout = content.gameObject.GetComponent<VerticalLayoutGroup>();
-        if (layout == null)
-        {
-            layout = content.gameObject.AddComponent<VerticalLayoutGroup>();
-        }
-        layout.spacing = 8;
-        layout.childControlWidth = true;
-        layout.childControlHeight = true;
-        layout.childForceExpandWidth = true;
-        layout.childForceExpandHeight = false;
-
-        CreateAlbumRow(content, "Shells", inventory.Shells + " shells", false, OceanDecorationReward.Seaweed, inventory);
-        CreateAlbumRow(content, "Fish 4/4", inventory.GetCatchCount(OceanFishType.Fish) + " caught", false, OceanDecorationReward.Shell, inventory);
-        CreateAlbumRow(content, "Octopus 3/4", inventory.GetCatchCount(OceanFishType.Octopus) + " caught", false, OceanDecorationReward.Star, inventory);
-        CreateAlbumRow(content, "Turtle 2/4", inventory.GetCatchCount(OceanFishType.Turtle) + " caught", false, OceanDecorationReward.Flag, inventory);
-        CreateAlbumRow(content, "Jellyfish 6/8", inventory.GetCatchCount(OceanFishType.Jellyfish) + " caught", false, OceanDecorationReward.Pearl, inventory);
-        CreateAlbumRow(content, "Seaweed", inventory.IsDecorationUnlocked(OceanDecorationReward.Seaweed) ? "Use" : "Locked", true, OceanDecorationReward.Seaweed, inventory);
-        CreateAlbumRow(content, "Shell Decor", inventory.IsDecorationUnlocked(OceanDecorationReward.Shell) ? "Use" : "Catch 3 fish", true, OceanDecorationReward.Shell, inventory);
-        CreateAlbumRow(content, "Star Decor", inventory.IsDecorationUnlocked(OceanDecorationReward.Star) ? "Use" : "Catch 3 octopus", true, OceanDecorationReward.Star, inventory);
-        CreateAlbumRow(content, "Flag Decor", inventory.IsDecorationUnlocked(OceanDecorationReward.Flag) ? "Use" : "Catch 3 turtles", true, OceanDecorationReward.Flag, inventory);
-        CreateAlbumRow(content, "Pearl Decor", inventory.IsDecorationUnlocked(OceanDecorationReward.Pearl) ? "Use" : "Catch mystery fish", true, OceanDecorationReward.Pearl, inventory);
-    }
-
-    private void CreateAlbumRow(Transform parent, string label, string value, bool selectable, OceanDecorationReward reward, OceanBucketInventory inventory)
-    {
-        GameObject row = CreatePanel(parent, label.Replace(" ", "") + "Row", new Color(1f, 1f, 1f, 0.12f));
-        LayoutElement rowLayout = row.AddComponent<LayoutElement>();
-        rowLayout.minHeight = 34f;
-        HorizontalLayoutGroup group = row.AddComponent<HorizontalLayoutGroup>();
-        group.padding = new RectOffset(12, 12, 2, 2);
-        group.childControlWidth = true;
-        group.childControlHeight = true;
-        group.childForceExpandWidth = true;
-
-        CreateFlowLabel(row.transform, label, 24, FontStyle.Bold, Color.white, 300f);
-        CreateFlowLabel(row.transform, value, 22, FontStyle.Normal, new Color(1f, 0.94f, 0.68f), 260f);
-        if (selectable)
-        {
-            Button button = row.AddComponent<Button>();
-            Image rowImage = row.GetComponent<Image>();
-            if (rowImage != null)
-            {
-                rowImage.raycastTarget = true;
-            }
-            button.targetGraphic = rowImage;
-            button.onClick.AddListener(delegate
-            {
-                if (inventory.TrySelectDecoration(reward))
-                {
-                    UpdateBucket(inventory);
-                    RefreshBucketWorkshop(inventory);
-                }
-            });
-        }
-    }
-
-    private void CreateFlowLabel(Transform parent, string text, int size, FontStyle style, Color color, float width)
-    {
-        GameObject obj = new GameObject("Label", typeof(RectTransform));
-        obj.transform.SetParent(parent, false);
-        Text label = obj.AddComponent<Text>();
-        label.font = uiFont;
-        label.text = text;
-        label.fontSize = size;
-        label.fontStyle = style;
-        label.color = color;
-        label.alignment = TextAnchor.MiddleLeft;
-        LayoutElement layout = obj.AddComponent<LayoutElement>();
-        layout.minWidth = width;
-        layout.minHeight = 30f;
-    }
-
-    private string BeatName(OceanLesson lesson)
-    {
-        if (lesson.beatsPerBar == 4)
-        {
-            return "Walking Beat";
-        }
-        if (lesson.beatsPerBar == 3)
-        {
-            return "Sway Beat";
-        }
-        if (lesson.beatsPerBar == 2)
-        {
-            return "March Beat";
-        }
-        return "Wave Beat";
-    }
-
-    private string BeatPatternText(OceanLesson lesson)
-    {
-        if (lesson.beatsPerBar == 4)
-        {
-            return "STRONG  soft  soft  soft";
-        }
-        if (lesson.beatsPerBar == 3)
-        {
-            return "STRONG  soft  soft";
-        }
-        if (lesson.beatsPerBar == 2)
-        {
-            return "STRONG  soft";
-        }
-        return "STRONG  soft  soft   STRONG  soft  soft";
-    }
-
-    private string BeatBodyText(OceanLesson lesson)
-    {
-        if (lesson.beatsPerBar == 4)
-        {
-            return "A walking beat feels steady: one strong step, then three soft steps.";
-        }
-        if (lesson.beatsPerBar == 3)
-        {
-            return "A sway beat rocks like a boat: strong, soft, soft.";
-        }
-        if (lesson.beatsPerBar == 2)
-        {
-            return "A march beat steps left and right: strong, soft.";
-        }
-        return "A wave beat rolls in two groups: strong soft soft, strong soft soft.";
     }
 
     private string FreePondPreviewDescription(OceanLesson lesson)
@@ -2892,6 +3619,10 @@ public class OceanRhythmUIController : MonoBehaviour
         EnableRaycast(root, "OceanRoot/SingingShellButton");
         EnableRaycast(root, "OceanRoot/BucketAlbumOverlay");
         EnableRaycast(root, "OceanRoot/BucketAlbumOverlay/Card/CloseButton");
+        EnableRaycast(root, "OceanRoot/BucketAlbumOverlay/Card/Header/CloseButton");
+        EnableRaycast(root, "OceanRoot/BucketAlbumOverlay/Card/DecorationCollection/PrevPageButton");
+        EnableRaycast(root, "OceanRoot/BucketAlbumOverlay/Card/DecorationCollection/NextPageButton");
+        EnableRaycast(root, "OceanRoot/BucketAlbumOverlay/Card/DecorationDetail/ActionButton");
         EnableRaycast(root, "OceanRoot/ParentHelpOverlay");
         EnableRaycast(root, "OceanRoot/ParentHelpOverlay/Card/CloseButton");
         EnableRaycast(root, "OceanRoot/ParentHelpOverlay/Card/BackButton");
@@ -2903,6 +3634,11 @@ public class OceanRhythmUIController : MonoBehaviour
         EnableRaycast(root, "OceanRoot/BeatCardOverlay/Card/TryButton");
         EnableRaycast(root, "OceanRoot/BeatCardOverlay/Card/SkipButton");
         EnableRaycast(root, "OceanRoot/BeatCardOverlay/Card/CloseButton");
+        EnableRaycast(root, "OceanRoot/BeatCardOverlay/Cards/IntroCard/CloseButton");
+        EnableRaycast(root, "OceanRoot/BeatCardOverlay/Cards/FourFourCard/CloseButton");
+        EnableRaycast(root, "OceanRoot/BeatCardOverlay/Cards/ThreeFourCard/CloseButton");
+        EnableRaycast(root, "OceanRoot/BeatCardOverlay/Cards/TwoFourCard/CloseButton");
+        EnableRaycast(root, "OceanRoot/BeatCardOverlay/Cards/SixEightCard/CloseButton");
         EnableRaycast(root, "OceanRoot/SoundMatchOverlay");
         EnableRaycast(root, "OceanRoot/SoundMatchOverlay/Card/ReplayButton");
         EnableRaycast(root, "OceanRoot/SoundMatchOverlay/Card/CloseButton");
@@ -2921,7 +3657,11 @@ public class OceanRhythmUIController : MonoBehaviour
             }
         }
 
-        Transform library = FindTransform(root, "OceanRoot/BucketAlbumOverlay/Card/DecorationLibrary/Grid");
+        Transform library = FindTransform(root, "OceanRoot/BucketAlbumOverlay/Card/DecorationCollection/Grid");
+        if (library == null)
+        {
+            library = FindTransform(root, "OceanRoot/BucketAlbumOverlay/Card/DecorationLibrary/Grid");
+        }
         if (library != null)
         {
             OceanDecorationDragItem[] items = library.GetComponentsInChildren<OceanDecorationDragItem>(true);

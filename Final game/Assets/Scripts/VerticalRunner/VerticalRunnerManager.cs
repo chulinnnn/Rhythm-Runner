@@ -6,6 +6,15 @@ using UnityEngine.UI;
 [DefaultExecutionOrder(-1000)]
 public class VerticalRunnerManager : MonoBehaviour
 {
+    private struct ControlPromptState
+    {
+        public bool show;
+        public bool spaceDown;
+        public bool downDown;
+        public bool leftDown;
+        public bool rightDown;
+    }
+
     private static bool registered;
     private const string VerticalRunnerSceneName = "VerticalRunner";
 
@@ -17,6 +26,9 @@ public class VerticalRunnerManager : MonoBehaviour
 
     [Header("Runtime scene policy")]
     public RuntimeScenePolicy scenePolicy = CreateDefaultScenePolicy();
+
+    [Header("Visual Timing")]
+    public float visualBeatDelaySeconds = 0.15f;
 
     private VerticalBeatSpawner spawner;
     private VerticalRunnerPlayer player;
@@ -151,6 +163,18 @@ public class VerticalRunnerManager : MonoBehaviour
 
     private void Update()
     {
+        float beatPosition = GetBeatPosition();
+        float visualBeatPosition = beatPosition - visualBeatDelaySeconds / BeatInterval();
+        if (ui != null)
+        {
+            ControlPromptState prompt = ResolveControlPromptState(visualBeatPosition);
+            ui.UpdateControlRhythmPrompt(prompt.spaceDown, prompt.downDown, prompt.leftDown, prompt.rightDown, prompt.show);
+            if (!runEnded && !waitingForBriefing && !waitingForGameRules)
+            {
+                ui.UpdateBeatLane(visualBeatPosition, settings.startBeat, settings.beatsPerPlatform);
+            }
+        }
+
         if (runEnded || waitingForBriefing || waitingForGameRules || waitingForCountdown)
         {
             return;
@@ -164,13 +188,6 @@ public class VerticalRunnerManager : MonoBehaviour
         {
             cameraController.Tick();
         }
-
-        float beatPosition = GetBeatPosition();
-        if (ui != null)
-        {
-            ui.UpdateBeatLane(beatPosition, settings.startBeat, settings.beatsPerPlatform);
-        }
-
         if (mode == VerticalRunnerMode.Game && Time.time - startTime >= settings.songDurationSeconds)
         {
             CompleteRun();
@@ -1120,6 +1137,83 @@ public class VerticalRunnerManager : MonoBehaviour
         }
 
         ui.UpdateStats(missCount, score, coins, combo, maxCombo, progress);
+    }
+
+    private ControlPromptState ResolveControlPromptState(float beatPosition)
+    {
+        ControlPromptState state = new ControlPromptState
+        {
+            show = false
+        };
+
+        if (runEnded || waitingForBriefing || waitingForGameRules)
+        {
+            return state;
+        }
+
+        state.show = true;
+        state.spaceDown = IsPromptJumpBeat(beatPosition);
+        state.downDown = HasPickupActionOnCurrentBeat(beatPosition);
+        ApplyDirectionalPrompt(beatPosition, ref state);
+        return state;
+    }
+
+    private void ApplyDirectionalPrompt(float beatPosition, ref ControlPromptState state)
+    {
+        VerticalRunnerPlatform platform = player != null ? player.CurrentPlatform : null;
+        if (platform == null || !platform.requiresDirectionalChoice || platform.actionBeatIndex < 0)
+        {
+            return;
+        }
+        if (!IsPromptActionBeat(beatPosition))
+        {
+            return;
+        }
+
+        if (platform.safeChoice == VerticalBranchChoice.Left)
+        {
+            state.leftDown = true;
+        }
+        else if (platform.safeChoice == VerticalBranchChoice.Right)
+        {
+            state.rightDown = true;
+        }
+    }
+
+    private bool HasPickupActionOnCurrentBeat(float beatPosition)
+    {
+        if (!IsPromptActionBeat(beatPosition))
+        {
+            return false;
+        }
+
+        VerticalRunnerPickup pickup = GetActiveRoutePickupForPlayer();
+        return pickup != null;
+    }
+
+    private VerticalRunnerPickup GetActiveRoutePickupForPlayer()
+    {
+        if (spawner == null || player == null)
+        {
+            return null;
+        }
+
+        VerticalRunnerPlatform platform = player.TargetPlatform != null ? player.TargetPlatform : player.CurrentPlatform;
+        return spawner.GetCollectibleCoinForPlatform(platform);
+    }
+
+    private bool IsPromptJumpBeat(float beatPosition)
+    {
+        int currentBeat = Mathf.FloorToInt(beatPosition);
+        int beatInBar = PositiveModulo(currentBeat, 4);
+        return beatInBar == 0 || beatInBar == 2;
+    }
+
+    private bool IsPromptActionBeat(float beatPosition)
+    {
+        int currentBeat = Mathf.FloorToInt(beatPosition);
+        int beatInBar = PositiveModulo(currentBeat, 4);
+        return beatInBar == 1 || beatInBar == 3;
     }
 
     private float GetBeatPosition()
