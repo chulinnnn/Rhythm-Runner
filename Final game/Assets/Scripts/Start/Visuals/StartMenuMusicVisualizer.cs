@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+// EN: Clones hierarchy-owned note templates into a non-interactive staff/wave animation.
+// ZH: 从 Hierarchy 管理的音符模板克隆非交互动画对象，形成谱线/波形流动效果。
 [DisallowMultipleComponent]
 public class StartMenuMusicVisualizer : MonoBehaviour
 {
@@ -234,6 +236,8 @@ public class StartMenuMusicVisualizer : MonoBehaviour
 
     private void RebuildTemplates()
     {
+        // EN: Source sprites/colors/sizes are read from the scene and never overwritten here.
+        // ZH: 这里只读取场景里的源图片、颜色和尺寸，不回写覆盖。
         RestoreSourceTemplates();
         templates.Clear();
 

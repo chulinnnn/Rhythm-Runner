@@ -14,37 +14,29 @@ The project style is: scene Hierarchy owns editable UI/world structure, while ru
 
 ## Start
 
-### `Assets/Scripts/Start/StartMenuController.cs`
+### `Assets/Scripts/Start/Menu/StartMenuController.cs`
 
 - Type: `Scene-attached`, `Auto-entry`
 - Owner scene: `Start`
-- Purpose: Main menu controller. Binds the editable `StartMenuCanvas`, wires the three mode cards, settings UI, parent/help UI, and scene navigation to `OceanRhythm`, `VerticalRunner`, and `AdvancedRunner`.
+- Purpose: Main menu controller. Binds the editable `StartMenuCanvas`, wires the four mode cards, Settings/Records/About panels, and scene navigation to `OceanRhythm`, `VerticalRunner`, `AdvancedRunner`, and `WorldMusicExplorer`.
 - Important dependencies: `RuntimeScenePolicy`, `SceneTransitionManager`, UI object names under `StartMenuCanvas`.
 - Safe to rename: No. Unity component class/file name and auto-entry behavior should stay stable.
 
-### `Assets/Scripts/Start/Leaderboard/LeaderboardBootstrap.cs`
+### `Assets/Scripts/Start/Visuals/StartMenuMusicVisualizer.cs`
 
-- Type: `Auto-entry`
+- Type: `Scene-attached`, `Runtime-created helpers`
 - Owner scene: `Start`
-- Purpose: Automatically creates the leaderboard runtime UI when the active scene is Start-like and a `phbtn` object exists.
-- Important dependencies: `LeaderboardUI`, `LeaderboardManager`, button object named `phbtn`.
-- Safe to rename: No. It depends on Unity runtime initialization and known Start UI naming.
+- Purpose: Animates hierarchy-owned note/icon templates under `StartMenuCanvas/Root/music` into non-interactive staff/wave music visuals.
+- Important dependencies: `menuMusic` AudioSource when available, UI object names under `Root/music`.
+- Safe to rename: No. The Start scene and bakers reference this component by GUID/type.
 
-### `Assets/Scripts/Start/Leaderboard/LeaderboardManager.cs`
+### `Assets/Scripts/Start/Records/LeaderboardManager.cs`
 
 - Type: `Data/helper`
-- Owner scene: Shared by leaderboard UI, currently surfaced from `Start`.
-- Purpose: Stores and reads Easy/Hard leaderboard scores using `PlayerPrefs`.
+- Owner scene: Shared by Start RecordsPanel and score-saving callers.
+- Purpose: Stores and reads Easy/Hard leaderboard scores using `PlayerPrefs`; visual presentation comes from the hierarchy-owned `RecordsPanel` templates.
 - Important dependencies: `LeaderboardMode`, active scene name for mode detection.
 - Safe to rename: Usually yes from scene-reference perspective, but update code references if renamed.
-
-### `Assets/Scripts/Start/Leaderboard/LeaderboardUI.cs`
-
-- Type: `Runtime-created`
-- Owner scene: `Start`
-- Purpose: Builds and controls the leaderboard popup UI at runtime, attaches behavior to `phbtn`, and renders Easy/Hard score lists.
-- Important dependencies: `LeaderboardBootstrap`, `LeaderboardManager`, `phbtn`, Unity UI/EventSystem.
-- Safe to rename: No, because `LeaderboardBootstrap` creates it by type.
 
 ## OceanRhythm
 

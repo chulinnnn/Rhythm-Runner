@@ -343,9 +343,7 @@ public static class AllSceneHierarchyBaker
         GameObject root = EnsureFullscreenRect(canvas.transform, "Root");
         EnsureImage(root, new Color(0.05f, 0.34f, 0.52f, 1f));
         EnsureStartMusicDecorations(root.transform);
-        EnsureStartMusicCoverStage(root.transform);
         EnsureText(root.transform, "Title", "Beat Bunny", new Vector2(0.5f, 1f), new Vector2(0f, -82f), new Vector2(840f, 82f), 58, FontStyle.Bold, Color.white);
-        EnsureText(root.transform, "Subtitle", "Choose a rhythm path", new Vector2(0.5f, 1f), new Vector2(0f, -142f), new Vector2(840f, 40f), 26, FontStyle.Normal, new Color(0.95f, 1f, 0.82f));
 
         GameObject modeRow = EnsureRect(root.transform, "ModeRow", new Vector2(0.5f, 0.52f), Vector2.zero, new Vector2(1360f, 290f));
         RemoveHorizontalLayout(modeRow);
@@ -448,73 +446,6 @@ public static class AllSceneHierarchyBaker
         EnsureMissingRect(music.transform, "Templates", Vector2.zero, Vector2.zero, Vector2.zero);
         EnsureMissingRect(music.transform, "StaffLines", Vector2.zero, Vector2.zero, Vector2.zero);
         EnsureMissingRect(music.transform, "Runtime", Vector2.zero, Vector2.zero, Vector2.zero);
-    }
-
-    public static void EnsureStartMusicCoverStage(Transform root)
-    {
-        if (root == null)
-        {
-            return;
-        }
-
-        bool created = root.Find("MusicCoverStage") == null;
-        GameObject stage = EnsureMissingRect(root, "MusicCoverStage", Vector2.zero, Vector2.zero, Vector2.zero);
-        RectTransform stageRect = stage.GetComponent<RectTransform>();
-        if (created && stageRect != null)
-        {
-            stageRect.anchorMin = Vector2.zero;
-            stageRect.anchorMax = Vector2.one;
-            stageRect.anchoredPosition = Vector2.zero;
-            stageRect.sizeDelta = Vector2.zero;
-
-            Transform music = root.Find("music");
-            if (music != null)
-            {
-                stage.transform.SetSiblingIndex(music.GetSiblingIndex() + 1);
-            }
-        }
-
-        CanvasGroup stageGroup = stage.GetComponent<CanvasGroup>();
-        if (stageGroup == null)
-        {
-            stageGroup = stage.AddComponent<CanvasGroup>();
-        }
-        stageGroup.interactable = false;
-        stageGroup.blocksRaycasts = false;
-
-        if (stage.GetComponent<StartMenuCoverStageAnimator>() == null)
-        {
-            stage.AddComponent<StartMenuCoverStageAnimator>();
-        }
-
-        EnsureCoverImageSlot(stage.transform, "TitleHalo", new Vector2(0.5f, 0.86f), Vector2.zero, new Vector2(520f, 160f), new Color(1f, 0.95f, 0.45f, 0.18f));
-
-        GameObject waveRings = EnsureMissingRect(stage.transform, "WaveRings", Vector2.zero, Vector2.zero, Vector2.zero);
-        EnsureCoverImageSlot(waveRings.transform, "Ring1", new Vector2(0.5f, 0.84f), Vector2.zero, new Vector2(340f, 120f), new Color(1f, 1f, 1f, 0.08f));
-        EnsureCoverImageSlot(waveRings.transform, "Ring2", new Vector2(0.5f, 0.84f), Vector2.zero, new Vector2(460f, 170f), new Color(0.43f, 0.9f, 1f, 0.07f));
-        EnsureCoverImageSlot(waveRings.transform, "Ring3", new Vector2(0.5f, 0.84f), Vector2.zero, new Vector2(600f, 220f), new Color(1f, 0.72f, 0.95f, 0.06f));
-
-        GameObject spotlights = EnsureMissingRect(stage.transform, "Spotlights", Vector2.zero, Vector2.zero, Vector2.zero);
-        EnsureCoverImageSlot(spotlights.transform, "Left", new Vector2(0.1f, 1f), new Vector2(0f, -72f), new Vector2(280f, 540f), new Color(1f, 0.92f, 0.42f, 0.12f));
-        EnsureCoverImageSlot(spotlights.transform, "Right", new Vector2(0.9f, 1f), new Vector2(0f, -72f), new Vector2(280f, 540f), new Color(0.42f, 0.95f, 1f, 0.12f));
-
-        GameObject speakers = EnsureMissingRect(stage.transform, "Speakers", Vector2.zero, Vector2.zero, Vector2.zero);
-        EnsureCoverImageSlot(speakers.transform, "Left", new Vector2(0.08f, 0.18f), Vector2.zero, new Vector2(150f, 150f), new Color(1f, 1f, 1f, 0.12f));
-        EnsureCoverImageSlot(speakers.transform, "Right", new Vector2(0.92f, 0.18f), Vector2.zero, new Vector2(150f, 150f), new Color(1f, 1f, 1f, 0.12f));
-
-        GameObject cardGlows = EnsureMissingRect(stage.transform, "CardGlows", Vector2.zero, Vector2.zero, Vector2.zero);
-        EnsureCoverImageSlot(cardGlows.transform, "Card1", new Vector2(0.5f, 0.52f), new Vector2(-510f, 0f), new Vector2(350f, 280f), new Color(0.42f, 0.95f, 1f, 0.12f));
-        EnsureCoverImageSlot(cardGlows.transform, "Card2", new Vector2(0.5f, 0.52f), new Vector2(-170f, 0f), new Vector2(350f, 280f), new Color(1f, 0.74f, 0.28f, 0.12f));
-        EnsureCoverImageSlot(cardGlows.transform, "Card3", new Vector2(0.5f, 0.52f), new Vector2(170f, 0f), new Vector2(350f, 280f), new Color(0.56f, 1f, 0.48f, 0.12f));
-        EnsureCoverImageSlot(cardGlows.transform, "Card4", new Vector2(0.5f, 0.52f), new Vector2(510f, 0f), new Vector2(350f, 280f), new Color(1f, 0.55f, 1f, 0.12f));
-
-        GameObject floating = EnsureMissingRect(stage.transform, "FloatingDecorations", Vector2.zero, Vector2.zero, Vector2.zero);
-        EnsureCoverImageSlot(floating.transform, "TopLeft", new Vector2(0.18f, 0.76f), Vector2.zero, new Vector2(80f, 80f), new Color(1f, 1f, 1f, 0.12f));
-        EnsureCoverImageSlot(floating.transform, "TopRight", new Vector2(0.82f, 0.74f), Vector2.zero, new Vector2(80f, 80f), new Color(1f, 1f, 1f, 0.12f));
-        EnsureCoverImageSlot(floating.transform, "BottomLeft", new Vector2(0.22f, 0.3f), Vector2.zero, new Vector2(70f, 70f), new Color(1f, 1f, 1f, 0.1f));
-        EnsureCoverImageSlot(floating.transform, "BottomRight", new Vector2(0.78f, 0.31f), Vector2.zero, new Vector2(70f, 70f), new Color(1f, 1f, 1f, 0.1f));
-
-        DisableCoverStageRaycasts(stage.transform);
     }
 
     public static void EnsureStartWorldMusicExplorerEntry(Transform root, StartMenuController controller)

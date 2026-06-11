@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+// EN: Score storage only. Start RecordsPanel owns presentation through hierarchy templates.
+// ZH: 这里只负责分数存取；Start 的 RecordsPanel 通过 Hierarchy 模板负责显示样式。
 public enum LeaderboardMode
 {
     Easy,

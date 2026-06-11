@@ -4,6 +4,8 @@ using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+// EN: Binds the hierarchy-owned Start menu without owning its static art, layout, or text style.
+// ZH: 只绑定 Hierarchy 里的 Start 菜单，不接管静态图片、布局或文字样式。
 [DefaultExecutionOrder(-150)]
 public class StartMenuController : MonoBehaviour
 {
@@ -73,10 +75,6 @@ public class StartMenuController : MonoBehaviour
     private void BuildMenu()
     {
         EnsureEventSystem();
-        if (!scenePolicy.useExistingSceneObjects || scenePolicy.rebuildUiOnPlay)
-        {
-            HideLegacyStartCanvases();
-        }
 
         GameObject existing = GameObject.Find("StartMenuCanvas");
         if (existing != null && scenePolicy.useExistingSceneObjects && !scenePolicy.rebuildUiOnPlay)
@@ -100,8 +98,6 @@ public class StartMenuController : MonoBehaviour
         }
 
         Debug.LogWarning("StartMenuController: StartMenuCanvas is missing. Add it to the scene hierarchy before play.");
-        return;
-
     }
 
     private bool BindExistingMenu(GameObject existing)
@@ -147,6 +143,8 @@ public class StartMenuController : MonoBehaviour
 
     private void EnsureMusicDecorations(Transform menuRoot)
     {
+        // EN: The music object supplies hierarchy-owned note art; runtime may add only the visualizer component.
+        // ZH: music 对象提供可在 Hierarchy 编辑的音符素材；运行时只补 visualizer 组件。
         Transform root = menuRoot.Find("Root");
         if (root == null)
         {
@@ -175,24 +173,6 @@ public class StartMenuController : MonoBehaviour
         if (music.GetComponent<StartMenuMusicVisualizer>() == null)
         {
             music.gameObject.AddComponent<StartMenuMusicVisualizer>();
-        }
-
-        Transform coverStage = root.Find("MusicCoverStage");
-        if (coverStage != null)
-        {
-            StartMenuCoverStageAnimator animator = coverStage.GetComponent<StartMenuCoverStageAnimator>();
-            if (animator == null)
-            {
-                animator = coverStage.gameObject.AddComponent<StartMenuCoverStageAnimator>();
-            }
-
-            CanvasGroup group = coverStage.GetComponent<CanvasGroup>();
-            if (group == null)
-            {
-                group = coverStage.gameObject.AddComponent<CanvasGroup>();
-            }
-            group.blocksRaycasts = false;
-            group.interactable = false;
         }
     }
 
@@ -239,27 +219,6 @@ public class StartMenuController : MonoBehaviour
         slider.onValueChanged.AddListener(onChanged);
     }
 
-    private void HideLegacyStartCanvases()
-    {
-        Canvas[] canvases = FindObjectsOfType<Canvas>();
-        for (int i = 0; i < canvases.Length; i++)
-        {
-            Canvas legacy = canvases[i];
-            if (legacy == null || legacy.gameObject.scene.name != "Start")
-            {
-                continue;
-            }
-
-            string canvasName = legacy.gameObject.name;
-            if (canvasName == "StartMenuCanvas" || canvasName == "LeaderboardCanvas" || canvasName == "SceneTransitionCanvas")
-            {
-                continue;
-            }
-
-            legacy.gameObject.SetActive(false);
-        }
-    }
-
     private void RefreshRecords()
     {
         if (recordsPanel == null)
@@ -268,10 +227,6 @@ public class StartMenuController : MonoBehaviour
         }
 
         Transform content = recordsPanel.transform.Find("Card/RecordsContent");
-        if (content == null)
-        {
-            content = recordsPanel.transform.Find("RecordsContent");
-        }
         if (content == null)
         {
             return;
@@ -307,6 +262,7 @@ public class StartMenuController : MonoBehaviour
 
     private void CreateRecordRow(Transform parent, string templateName, string nameSuffix, string value)
     {
+        // EN/ZH: Only dynamic score text changes; template styling remains Hierarchy-owned. / 只更新动态分数文字，模板样式仍由 Hierarchy 控制。
         Transform template = parent.Find(templateName);
         if (template == null)
         {
