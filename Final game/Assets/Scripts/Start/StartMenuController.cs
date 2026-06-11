@@ -176,6 +176,24 @@ public class StartMenuController : MonoBehaviour
         {
             music.gameObject.AddComponent<StartMenuMusicVisualizer>();
         }
+
+        Transform coverStage = root.Find("MusicCoverStage");
+        if (coverStage != null)
+        {
+            StartMenuCoverStageAnimator animator = coverStage.GetComponent<StartMenuCoverStageAnimator>();
+            if (animator == null)
+            {
+                animator = coverStage.gameObject.AddComponent<StartMenuCoverStageAnimator>();
+            }
+
+            CanvasGroup group = coverStage.GetComponent<CanvasGroup>();
+            if (group == null)
+            {
+                group = coverStage.gameObject.AddComponent<CanvasGroup>();
+            }
+            group.blocksRaycasts = false;
+            group.interactable = false;
+        }
     }
 
     private GameObject FindChild(Transform root, string path)

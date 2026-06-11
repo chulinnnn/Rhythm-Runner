@@ -28,6 +28,8 @@ public class StartMenuMusicVisualizer : MonoBehaviour
     public Vector2 rotationRange = new Vector2(-12f, 12f);
     public float edgeFadePortion = 0.14f;
     public float spriteRendererTemplateSize = 72f;
+    public float staffDriftPixels = 0f;
+    public float noteBeatGlowAlpha = 0f;
 
     [Header("Staff Lines")]
     public bool createMissingStaffLines = true;
@@ -98,12 +100,17 @@ public class StartMenuMusicVisualizer : MonoBehaviour
         float left = -width * 0.5f;
         float laneSpacing = Mathf.Lerp(laneSpacingRange.x, laneSpacingRange.y, 0.5f);
         float laneCenterOffset = (Mathf.Max(1, laneCount) - 1) * laneSpacing * 0.5f;
+        float staffDrift = Mathf.Sin(time * 0.35f) * staffDriftPixels;
+        if (staffRoot != null)
+        {
+            staffRoot.anchoredPosition = new Vector2(staffDrift, 0f);
+        }
 
         for (int i = 0; i < notes.Count; i++)
         {
             NoteVisual note = notes[i];
             float travel = Mathf.Repeat((time / Mathf.Max(1f, travelSeconds)) + note.phase, 1f);
-            float x = left + (travel * width);
+            float x = left + (travel * width) + staffDrift;
             float laneY = (note.lane * laneSpacing) - laneCenterOffset;
             float wave = Mathf.Sin((travel * Mathf.PI * 2f * note.waveFrequency) + note.wavePhase) * note.waveAmplitude;
             float y = laneY + wave;
@@ -112,7 +119,7 @@ public class StartMenuMusicVisualizer : MonoBehaviour
 
             float beatAccent = note.beatSlot == Mathf.FloorToInt(beatPosition) % 4 ? pulse : pulse * 0.45f;
             note.rect.localScale = note.baseScale * (1f + beatAccent);
-            note.canvasGroup.alpha = EdgeFade(travel) * note.alpha;
+            note.canvasGroup.alpha = Mathf.Clamp01((EdgeFade(travel) * note.alpha) + (beatAccent * noteBeatGlowAlpha));
         }
     }
 
