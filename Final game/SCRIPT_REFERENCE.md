@@ -40,47 +40,45 @@ The project style is: scene Hierarchy owns editable UI/world structure, while ru
 
 ## OceanRhythm
 
-### `Assets/Scripts/OceanRhythm/OceanRhythmManager.cs`
+### Core
+
+#### `Assets/Scripts/OceanRhythm/Core/OceanRhythmManager.cs`
 
 - Type: `Scene-attached`, `Auto-entry`
 - Owner scene: `OceanRhythm`
 - Purpose: Main controller for Little Rhythm Ocean. Owns phase flow, fish/rhythm lessons, track library, timing, input handling, score/catch state, music setup, and transition back to Start.
 - Important dependencies: `OceanRhythmUIController`, `OceanRhythmData`, `SimpleMetronomeAudio`, `RuntimeScenePolicy`, `SceneTransitionManager`.
 - Safe to rename: No. It is a core scene component and auto-entry point.
+- Core note: This is the main gameplay owner. `Update()` is the central runtime loop, and `JudgeSpaceInput()` is the timing-judgment core.
 
-### `Assets/Scripts/OceanRhythm/OceanRhythmUIController.cs`
+#### `Assets/Scripts/OceanRhythm/Core/OceanRhythmData.cs`
+
+- Type: `Data/helper`
+- Owner scene: `OceanRhythm`
+- Purpose: Defines ocean data types: fish types, beat card ids, decoration rewards, bucket slots, unlock requirements, and `OceanBucketInventory` PlayerPrefs persistence.
+- Important dependencies: `PlayerPrefs`, ocean UI/manager code.
+- Safe to rename: Usually yes from scene-reference perspective, but update code references if renamed.
+
+#### `Assets/Scripts/OceanRhythm/Core/SimpleMetronomeAudio.cs`
+
+- Type: `Scene-attached`, `Runtime-created`
+- Owner scene: `OceanRhythm`
+- Purpose: Simple beat/metronome audio helper used when an ocean lesson has no assigned music clip.
+- Important dependencies: Unity `AudioSource`.
+- Safe to rename: No if `OceanRhythmManager` continues creating it by type.
+
+### UI
+
+#### `Assets/Scripts/OceanRhythm/UI/OceanRhythmUIController.cs`
 
 - Type: `Scene-attached`, `Runtime-created helpers`
 - Owner scene: `OceanRhythm`
 - Purpose: Binds the editable `OceanRhythmCanvas`, controls Ocean UI text/buttons/overlays, creates pond animals, beat bubbles, bucket album UI, sound match UI, and decoration items.
 - Important dependencies: `OceanRhythmManager`, `OceanPondAnimal`, `OceanAnimalController`, `OceanNetCursor`, `OceanBucketSlot`, `OceanDecorationDragItem`, `WaterRippleController`, scene object paths under `OceanRoot`.
 - Safe to rename: No. It is referenced and created by `OceanRhythmManager`.
+- Core note: This is the main hierarchy-binding owner for Ocean UI. It should not overwrite hierarchy-authored layout, sprites, colors, fonts, or panel styling.
 
-### `Assets/Scripts/OceanRhythm/OceanRhythmData.cs`
-
-- Type: `Data/helper`
-- Owner scene: `OceanRhythm`
-- Purpose: Defines ocean data types: fish types, decoration rewards, bucket slots, unlock requirements, and `OceanBucketInventory` PlayerPrefs persistence.
-- Important dependencies: `PlayerPrefs`, ocean UI/manager code.
-- Safe to rename: Usually yes from scene-reference perspective, but update code references if renamed.
-
-### `Assets/Scripts/OceanRhythm/OceanPondAnimal.cs`
-
-- Type: `Scene-attached`, `Runtime-created`
-- Owner scene: `OceanRhythm`
-- Purpose: Represents an interactive pond animal/fish. Handles lesson assignment, selection visuals, capture progress bubbles, movement, and click interaction.
-- Important dependencies: `OceanRhythmManager`, `OceanRhythmUIController`, `OceanLesson`, `OceanFishType`.
-- Safe to rename: No, because UI generation adds it by type.
-
-### `Assets/Scripts/OceanRhythm/OceanAnimalController.cs`
-
-- Type: `Scene-attached`, `Runtime-created`
-- Owner scene: `OceanRhythm`
-- Purpose: Controls a guided ocean animal UI object, including fallback image/text setup and sprite animation.
-- Important dependencies: `OceanSpriteAnimator`, Unity UI Image/Text.
-- Safe to rename: No if generated guided animal behavior remains.
-
-### `Assets/Scripts/OceanRhythm/OceanNetCursor.cs`
+#### `Assets/Scripts/OceanRhythm/UI/OceanNetCursor.cs`
 
 - Type: `Scene-attached`, `Runtime-created`
 - Owner scene: `OceanRhythm`
@@ -88,23 +86,33 @@ The project style is: scene Hierarchy owns editable UI/world structure, while ru
 - Important dependencies: Unity UI Image, pointer/mouse position from ocean UI flow.
 - Safe to rename: No if scene/generated net cursor binding remains.
 
-### `Assets/Scripts/OceanRhythm/OceanBucketSlot.cs`
+#### `Assets/Scripts/OceanRhythm/UI/WaterRippleController.cs`
 
 - Type: `Scene-attached`, `Runtime-created`
 - Owner scene: `OceanRhythm`
-- Purpose: Represents one bucket decoration slot. Handles slot visuals, labels, click/pointer interaction, and placed decoration display.
-- Important dependencies: `OceanRhythmUIController`, `OceanBucketSlotId`, `OceanDecorationReward`.
-- Safe to rename: No if bucket album generation remains.
+- Purpose: Creates non-raycast expanding UI ripple effects from pointer positions.
+- Important dependencies: Unity UI Image/RectTransform.
+- Safe to rename: No if ocean UI root continues adding it by type.
 
-### `Assets/Scripts/OceanRhythm/OceanDecorationDragItem.cs`
+### Pond
 
-- Type: `Runtime-created`
+#### `Assets/Scripts/OceanRhythm/Pond/OceanPondAnimal.cs`
+
+- Type: `Scene-attached`, `Runtime-created`
 - Owner scene: `OceanRhythm`
-- Purpose: Drag/click behavior for a decoration item in the bucket album. Supports unlock gating, drag highlight, drop placement, and info display.
-- Important dependencies: `OceanRhythmUIController`, `OceanDecorationReward`, Unity event interfaces.
-- Safe to rename: No. It is added by `OceanRhythmUIController`.
+- Purpose: Represents an interactive pond animal/fish. Handles lesson assignment, selection visuals, capture progress bubbles, movement, and click interaction.
+- Important dependencies: `OceanRhythmManager`, `OceanRhythmUIController`, `OceanLesson`, `OceanFishType`.
+- Safe to rename: No, because UI generation adds it by type.
 
-### `Assets/Scripts/OceanRhythm/OceanSpriteAnimator.cs`
+#### `Assets/Scripts/OceanRhythm/Pond/OceanAnimalController.cs`
+
+- Type: `Scene-attached`, `Runtime-created`
+- Owner scene: `OceanRhythm`
+- Purpose: Controls a guided ocean animal UI object, including fallback image/text setup and sprite animation.
+- Important dependencies: `OceanSpriteAnimator`, Unity UI Image/Text.
+- Safe to rename: No if generated guided animal behavior remains.
+
+#### `Assets/Scripts/OceanRhythm/Pond/OceanSpriteAnimator.cs`
 
 - Type: `Scene-attached`, `Runtime-created`
 - Owner scene: `OceanRhythm`
@@ -112,65 +120,46 @@ The project style is: scene Hierarchy owns editable UI/world structure, while ru
 - Important dependencies: Unity UI Image, sprite frame arrays.
 - Safe to rename: No if ocean animal setup still creates it by type.
 
-### `Assets/Scripts/OceanRhythm/SimpleMetronomeAudio.cs`
+### BucketAlbum
+
+#### `Assets/Scripts/OceanRhythm/BucketAlbum/OceanBucketAlbumAssets.cs`
+
+- Type: `Scene config`
+- Owner scene: `OceanRhythm`
+- Purpose: Holds hierarchy/Inspector-assigned decoration icon sprites and optional reusable bucket-album sprites.
+- Important dependencies: `OceanDecorationReward`, `OceanRhythmManager.GetBucketAlbumAssets()`.
+- Safe to rename: No if the scene config component remains attached under `OceanRhythmConfig/BucketAlbumAssets`.
+
+#### `Assets/Scripts/OceanRhythm/BucketAlbum/OceanBucketSlot.cs`
 
 - Type: `Scene-attached`, `Runtime-created`
 - Owner scene: `OceanRhythm`
-- Purpose: Simple beat/metronome audio helper used by Ocean rhythm playback.
-- Important dependencies: Unity `AudioSource`.
-- Safe to rename: No if `OceanRhythmManager` continues creating it by type.
+- Purpose: Represents one bucket decoration slot. Handles slot visuals, labels, click/pointer interaction, and placed decoration display.
+- Important dependencies: `OceanRhythmUIController`, `OceanBucketSlotId`, `OceanDecorationReward`.
+- Safe to rename: No if bucket album generation remains.
 
-### `Assets/Scripts/OceanRhythm/WaterRippleController.cs`
+#### `Assets/Scripts/OceanRhythm/BucketAlbum/OceanDecorationDragItem.cs`
 
-- Type: `Scene-attached`, `Runtime-created`
+- Type: `Runtime-created`
 - Owner scene: `OceanRhythm`
-- Purpose: Creates expanding UI ripple effects from pointer/click positions.
-- Important dependencies: Unity UI Image/RectTransform.
-- Safe to rename: No if ocean UI root continues adding it by type.
+- Purpose: Drag/click behavior for a decoration item in the bucket album. Supports unlock gating, drag highlight, drop placement, and info display.
+- Important dependencies: `OceanRhythmUIController`, `OceanDecorationReward`, Unity event interfaces.
+- Safe to rename: No. It is added by `OceanRhythmUIController`.
 
 ## VerticalRunner
 
-### `Assets/Scripts/VerticalRunner/VerticalRunnerManager.cs`
+### Core
+
+#### `Assets/Scripts/VerticalRunner/Core/VerticalRunnerManager.cs`
 
 - Type: `Scene-attached`, `Auto-entry`
 - Owner scene: `VerticalRunner`
 - Purpose: Main controller for vertical runner. Owns tutorial/game mode flow, countdown, input handling, score/miss/combo state, route/player/camera/UI setup, and reset/retry behavior.
 - Important dependencies: `VerticalBeatSpawner`, `VerticalRunnerUI`, `VerticalRunnerPlayer`, `VerticalRunnerCamera`, `VerticalRunnerTemplates`, `RhythmManager`, `RuntimeScenePolicy`.
 - Safe to rename: No. It is a scene component and auto-entry point.
+- Core note: This is the main gameplay owner. `Update()` is the main runtime loop; `ReportJumpInput()`, `ReportCoinInput()`, and `ReportDirectionalDodge()` are the core timing judgment entry points.
 
-### `Assets/Scripts/VerticalRunner/VerticalBeatSpawner.cs`
-
-- Type: `Scene-attached`, `Runtime-created helpers`
-- Owner scene: `VerticalRunner`
-- Purpose: Builds the vertical route: platforms, long platforms, bananas, parrot obstacles, finish object, and generated gameplay objects.
-- Important dependencies: `VerticalRunnerSettings`, `VerticalRunnerTemplates`, `VerticalRunnerObjects`, `RuntimeScenePolicy`.
-- Safe to rename: No if manager/baker references remain.
-
-### `Assets/Scripts/VerticalRunner/VerticalRunnerUI.cs`
-
-- Type: `Scene-attached`, `Runtime-created fallback`
-- Owner scene: `VerticalRunner`
-- Purpose: Binds `VerticalRunnerCanvas`, controls HUD text, beat lane, tutorial/game overlays, result screen, damage flash, game controls, and button listeners.
-- Important dependencies: `VerticalRunnerManager`, `SceneTransitionManager`, UI object paths under `VerticalRunnerCanvas`.
-- Safe to rename: No. It is attached/created by manager and baker.
-
-### `Assets/Scripts/VerticalRunner/VerticalRunnerPlayer.cs`
-
-- Type: `Scene-attached`, `Runtime-created`
-- Owner scene: `VerticalRunner`
-- Purpose: Player movement and state. Handles jump arcs, recover behavior, branch movement, collision with pickups/obstacles, and player visuals/colliders.
-- Important dependencies: `VerticalRunnerPlatform`, `VerticalRunnerPickup`, `VerticalRunnerObstacle`.
-- Safe to rename: No. It is attached to the player template and may be added by spawner/manager.
-
-### `Assets/Scripts/VerticalRunner/VerticalRunnerCamera.cs`
-
-- Type: `Scene-attached`, `Runtime-created`
-- Owner scene: `VerticalRunner`
-- Purpose: Camera follow helper for the vertical runner player/world.
-- Important dependencies: `VerticalRunnerManager`, scene camera.
-- Safe to rename: No if manager/baker references remain.
-
-### `Assets/Scripts/VerticalRunner/VerticalRunnerSettings.cs`
+#### `Assets/Scripts/VerticalRunner/Core/VerticalRunnerSettings.cs`
 
 - Type: `Data/helper`
 - Owner scene: `VerticalRunner`
@@ -178,15 +167,18 @@ The project style is: scene Hierarchy owns editable UI/world structure, while ru
 - Important dependencies: `VerticalRunnerManager`, `VerticalBeatSpawner`.
 - Safe to rename: Usually yes from scene-reference perspective, but update code references if renamed.
 
-### `Assets/Scripts/VerticalRunner/VerticalRunnerTemplates.cs`
+### World
 
-- Type: `Scene-attached`
+#### `Assets/Scripts/VerticalRunner/World/VerticalBeatSpawner.cs`
+
+- Type: `Scene-attached`, `Runtime-created helpers`
 - Owner scene: `VerticalRunner`
-- Purpose: Stores editable hierarchy template references for player, platforms, pickups, obstacles, finish, and runtime root.
-- Important dependencies: `VerticalBeatSpawner`, scene object `VerticalRunnerTemplates`.
-- Safe to rename: No if scene/baker references remain.
+- Purpose: Builds the vertical route: platforms, long platforms, bananas, parrot obstacles, finish object, and generated gameplay objects.
+- Important dependencies: `VerticalRunnerSettings`, `VerticalRunnerTemplates`, `VerticalRunnerObjects`, `RuntimeScenePolicy`.
+- Safe to rename: No if manager/baker references remain.
+- Core note: `Build()` and the route-building helpers are the route generation center.
 
-### `Assets/Scripts/VerticalRunner/VerticalRunnerObjects.cs`
+#### `Assets/Scripts/VerticalRunner/World/VerticalRunnerObjects.cs`
 
 - Type: `Runtime-created`, `Data/helper`
 - Owner scene: `VerticalRunner`
@@ -194,13 +186,51 @@ The project style is: scene Hierarchy owns editable UI/world structure, while ru
 - Important dependencies: `RhythmManager`, `VerticalBeatSpawner`, `VerticalRunnerPlayer`.
 - Safe to rename: Usually yes from scene-reference perspective, but update code references if renamed.
 
-### `Assets/Scripts/VerticalRunner/VerticalScrollingBackground.cs`
+#### `Assets/Scripts/VerticalRunner/World/VerticalRunnerTemplates.cs`
+
+- Type: `Scene-attached`
+- Owner scene: `VerticalRunner`
+- Purpose: Stores editable hierarchy template references for player, platforms, pickups, obstacles, finish, and runtime root.
+- Important dependencies: `VerticalBeatSpawner`, scene object `VerticalRunnerTemplates`.
+- Safe to rename: No if scene/baker references remain.
+
+#### `Assets/Scripts/VerticalRunner/World/VerticalScrollingBackground.cs`
 
 - Type: `Scene-attached`
 - Owner scene: `VerticalRunner`
 - Purpose: Creates and moves vertical background tiles so the background covers the camera and scrolls smoothly without obvious seams.
 - Important dependencies: Camera, SpriteRenderer, background sprite object named `vertical`.
 - Safe to rename: No if scene/baker references remain.
+
+### Player
+
+#### `Assets/Scripts/VerticalRunner/Player/VerticalRunnerPlayer.cs`
+
+- Type: `Scene-attached`, `Runtime-created`
+- Owner scene: `VerticalRunner`
+- Purpose: Player movement and state. Handles keyboard input, jump arcs, recover behavior, branch movement, collision with pickups/obstacles, and player visuals/colliders.
+- Important dependencies: `VerticalRunnerManager`, `VerticalRunnerPlatform`, `VerticalRunnerPickup`, `VerticalRunnerObstacle`.
+- Safe to rename: No. It is attached to the player template and may be added by spawner/manager.
+- Core note: `Tick()` is the real keyboard input and movement execution loop.
+
+#### `Assets/Scripts/VerticalRunner/Player/VerticalRunnerCamera.cs`
+
+- Type: `Scene-attached`, `Runtime-created`
+- Owner scene: `VerticalRunner`
+- Purpose: Camera follow helper for the vertical runner player/world.
+- Important dependencies: `VerticalRunnerManager`, scene camera.
+- Safe to rename: No if manager/baker references remain.
+
+### UI
+
+#### `Assets/Scripts/VerticalRunner/UI/VerticalRunnerUI.cs`
+
+- Type: `Scene-attached`, `Runtime-created fallback`
+- Owner scene: `VerticalRunner`
+- Purpose: Binds `VerticalRunnerCanvas`, controls HUD text, beat lane, tutorial/game overlays, result screen, damage flash, game controls, and button listeners.
+- Important dependencies: `VerticalRunnerManager`, `SceneTransitionManager`, UI object paths under `VerticalRunnerCanvas`.
+- Safe to rename: No. It is attached/created by manager and baker.
+- Core note: `Build()` binds the hierarchy, `UpdateControlRhythmPrompt()` drives the four-column prompt, and `UpdateBeatLane()` drives the visual beat lane.
 
 ## AdvancedRunner
 

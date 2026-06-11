@@ -40,47 +40,45 @@
 
 ## OceanRhythm 海洋节奏
 
-### `Assets/Scripts/OceanRhythm/OceanRhythmManager.cs`
+### Core 核心
+
+#### `Assets/Scripts/OceanRhythm/Core/OceanRhythmManager.cs`
 
 - 类型：`场景挂载`、`自动入口`
 - 所属场景：`OceanRhythm`
 - 用途：Little Rhythm Ocean 的玩法总控制器。负责阶段流程、鱼和节奏课程、曲库、BPM/节拍判定、输入、捕获状态、音乐播放，以及返回 Start。
 - 关键依赖：`OceanRhythmUIController`、`OceanRhythmData`、`SimpleMetronomeAudio`、`RuntimeScenePolicy`、`SceneTransitionManager`。
 - 是否建议改名：不建议。它是核心场景组件和自动入口。
+- 核心说明：这是 OceanRhythm 的玩法主控。`Update()` 是主要运行循环，`JudgeSpaceInput()` 是节拍输入判定核心。
 
-### `Assets/Scripts/OceanRhythm/OceanRhythmUIController.cs`
+#### `Assets/Scripts/OceanRhythm/Core/OceanRhythmData.cs`
+
+- 类型：`数据/辅助`
+- 所属场景：`OceanRhythm`
+- 用途：定义海洋玩法的数据类型，包括鱼类型、节奏卡 id、装饰奖励、桶槽位、解锁条件和 `OceanBucketInventory` 存档逻辑。
+- 关键依赖：`PlayerPrefs`、海洋 Manager/UI 代码。
+- 是否建议改名：可以，但必须同步修改代码引用。
+
+#### `Assets/Scripts/OceanRhythm/Core/SimpleMetronomeAudio.cs`
+
+- 类型：`场景挂载`、`运行时创建`
+- 所属场景：`OceanRhythm`
+- 用途：当 Ocean lesson 没有配置音乐片段时使用的简单节拍器音频辅助组件。
+- 关键依赖：Unity `AudioSource`。
+- 是否建议改名：不建议。`OceanRhythmManager` 会创建或引用它。
+
+### UI 界面绑定
+
+#### `Assets/Scripts/OceanRhythm/UI/OceanRhythmUIController.cs`
 
 - 类型：`场景挂载`、`运行时创建辅助对象`
 - 所属场景：`OceanRhythm`
 - 用途：绑定 `OceanRhythmCanvas`，控制所有海洋 UI 文本、按钮、弹窗、池塘鱼、节拍泡泡、桶图鉴、声音匹配界面和装饰物。
 - 关键依赖：`OceanRhythmManager`、`OceanPondAnimal`、`OceanAnimalController`、`OceanNetCursor`、`OceanBucketSlot`、`OceanDecorationDragItem`、`WaterRippleController`、`OceanRoot` 下的固定 UI 路径。
 - 是否建议改名：不建议。Manager 会引用/创建它。
+- 核心说明：这是 Ocean UI 的主 Hierarchy 绑定层，不应覆盖场景中已编辑的布局、图片、颜色、字体或面板样式。
 
-### `Assets/Scripts/OceanRhythm/OceanRhythmData.cs`
-
-- 类型：`数据/辅助`
-- 所属场景：`OceanRhythm`
-- 用途：定义海洋玩法的数据类型，包括鱼类型、装饰奖励、桶槽位、解锁条件和 `OceanBucketInventory` 存档逻辑。
-- 关键依赖：`PlayerPrefs`、海洋 Manager/UI 代码。
-- 是否建议改名：可以，但必须同步修改代码引用。
-
-### `Assets/Scripts/OceanRhythm/OceanPondAnimal.cs`
-
-- 类型：`场景挂载`、`运行时创建`
-- 所属场景：`OceanRhythm`
-- 用途：表示池塘里的鱼/动物。处理课程绑定、被选中状态、捕获进度泡泡、移动和点击交互。
-- 关键依赖：`OceanRhythmManager`、`OceanRhythmUIController`、`OceanLesson`、`OceanFishType`。
-- 是否建议改名：不建议。UI 生成池塘鱼时会按类型添加。
-
-### `Assets/Scripts/OceanRhythm/OceanAnimalController.cs`
-
-- 类型：`场景挂载`、`运行时创建`
-- 所属场景：`OceanRhythm`
-- 用途：控制引导用海洋动物 UI，包括兜底 Image/Text 和 Sprite 动画。
-- 关键依赖：`OceanSpriteAnimator`、Unity UI Image/Text。
-- 是否建议改名：不建议。生成引导动物时可能会按类型添加。
-
-### `Assets/Scripts/OceanRhythm/OceanNetCursor.cs`
+#### `Assets/Scripts/OceanRhythm/UI/OceanNetCursor.cs`
 
 - 类型：`场景挂载`、`运行时创建`
 - 所属场景：`OceanRhythm`
@@ -88,23 +86,33 @@
 - 关键依赖：Unity UI Image、鼠标/指针位置。
 - 是否建议改名：不建议。场景或生成网光标会依赖它。
 
-### `Assets/Scripts/OceanRhythm/OceanBucketSlot.cs`
+#### `Assets/Scripts/OceanRhythm/UI/WaterRippleController.cs`
 
 - 类型：`场景挂载`、`运行时创建`
 - 所属场景：`OceanRhythm`
-- 用途：表示桶上的一个装饰槽位。处理槽位显示、标签、点击/指针交互和已放置装饰显示。
-- 关键依赖：`OceanRhythmUIController`、`OceanBucketSlotId`、`OceanDecorationReward`。
-- 是否建议改名：不建议。桶图鉴生成逻辑依赖它。
+- 用途：创建不挡点击的鼠标/指针水波纹 UI 效果。
+- 关键依赖：Unity UI Image/RectTransform。
+- 是否建议改名：不建议。海洋 UI 根对象会添加它。
 
-### `Assets/Scripts/OceanRhythm/OceanDecorationDragItem.cs`
+### Pond 池塘鱼
 
-- 类型：`运行时创建`
+#### `Assets/Scripts/OceanRhythm/Pond/OceanPondAnimal.cs`
+
+- 类型：`场景挂载`、`运行时创建`
 - 所属场景：`OceanRhythm`
-- 用途：桶图鉴中可拖拽装饰物的行为。负责解锁状态、拖拽高亮、拖放到槽位、点击显示说明。
-- 关键依赖：`OceanRhythmUIController`、`OceanDecorationReward`、Unity 拖拽/点击事件接口。
-- 是否建议改名：不建议。`OceanRhythmUIController` 会按类型添加它。
+- 用途：表示池塘里的鱼/动物。处理课程绑定、被选中状态、捕获进度泡泡、移动和点击交互。
+- 关键依赖：`OceanRhythmManager`、`OceanRhythmUIController`、`OceanLesson`、`OceanFishType`。
+- 是否建议改名：不建议。UI 生成池塘鱼时会按类型添加。
 
-### `Assets/Scripts/OceanRhythm/OceanSpriteAnimator.cs`
+#### `Assets/Scripts/OceanRhythm/Pond/OceanAnimalController.cs`
+
+- 类型：`场景挂载`、`运行时创建`
+- 所属场景：`OceanRhythm`
+- 用途：控制引导用海洋动物 UI，包括兜底 Image/Text 和 Sprite 动画。
+- 关键依赖：`OceanSpriteAnimator`、Unity UI Image/Text。
+- 是否建议改名：不建议。生成引导动物时可能会按类型添加。
+
+#### `Assets/Scripts/OceanRhythm/Pond/OceanSpriteAnimator.cs`
 
 - 类型：`场景挂载`、`运行时创建`
 - 所属场景：`OceanRhythm`
@@ -112,65 +120,46 @@
 - 关键依赖：Unity UI Image、Sprite 帧数组。
 - 是否建议改名：不建议。海洋动物创建流程可能会按类型添加。
 
-### `Assets/Scripts/OceanRhythm/SimpleMetronomeAudio.cs`
+### BucketAlbum 桶图鉴
+
+#### `Assets/Scripts/OceanRhythm/BucketAlbum/OceanBucketAlbumAssets.cs`
+
+- 类型：`场景配置`
+- 所属场景：`OceanRhythm`
+- 用途：保存 Hierarchy/Inspector 中挂载的装饰图标，以及可选复用的桶图鉴图片。
+- 关键依赖：`OceanDecorationReward`、`OceanRhythmManager.GetBucketAlbumAssets()`。
+- 是否建议改名：不建议。场景中的 `OceanRhythmConfig/BucketAlbumAssets` 会挂载它。
+
+#### `Assets/Scripts/OceanRhythm/BucketAlbum/OceanBucketSlot.cs`
 
 - 类型：`场景挂载`、`运行时创建`
 - 所属场景：`OceanRhythm`
-- 用途：简单节拍/节拍器音频辅助组件。
-- 关键依赖：Unity `AudioSource`。
-- 是否建议改名：不建议。`OceanRhythmManager` 会创建或引用它。
+- 用途：表示桶上的一个装饰槽位。处理槽位显示、标签、点击/指针交互和已放置装饰显示。
+- 关键依赖：`OceanRhythmUIController`、`OceanBucketSlotId`、`OceanDecorationReward`。
+- 是否建议改名：不建议。桶图鉴生成逻辑依赖它。
 
-### `Assets/Scripts/OceanRhythm/WaterRippleController.cs`
+#### `Assets/Scripts/OceanRhythm/BucketAlbum/OceanDecorationDragItem.cs`
 
-- 类型：`场景挂载`、`运行时创建`
+- 类型：`运行时创建`
 - 所属场景：`OceanRhythm`
-- 用途：创建点击/鼠标位置的水波纹 UI 效果。
-- 关键依赖：Unity UI Image/RectTransform。
-- 是否建议改名：不建议。海洋 UI 根对象会添加它。
+- 用途：桶图鉴中可拖拽装饰物的行为。负责解锁状态、拖拽高亮、拖放到槽位、点击显示说明。
+- 关键依赖：`OceanRhythmUIController`、`OceanDecorationReward`、Unity 拖拽/点击事件接口。
+- 是否建议改名：不建议。`OceanRhythmUIController` 会按类型添加它。
 
 ## VerticalRunner 竖版跑酷
 
-### `Assets/Scripts/VerticalRunner/VerticalRunnerManager.cs`
+### Core 核心
+
+#### `Assets/Scripts/VerticalRunner/Core/VerticalRunnerManager.cs`
 
 - 类型：`场景挂载`、`自动入口`
 - 所属场景：`VerticalRunner`
 - 用途：竖版跑酷总控制器。负责教程/正式模式流程、倒计时、输入、分数/失误/连击、路线/玩家/相机/UI 初始化，以及 Retry/Reset。
 - 关键依赖：`VerticalBeatSpawner`、`VerticalRunnerUI`、`VerticalRunnerPlayer`、`VerticalRunnerCamera`、`VerticalRunnerTemplates`、`RhythmManager`、`RuntimeScenePolicy`。
 - 是否建议改名：不建议。它是场景组件和自动入口。
+- 核心说明：这是 VerticalRunner 的玩法主控。`Update()` 是主运行循环，`ReportJumpInput()`、`ReportCoinInput()`、`ReportDirectionalDodge()` 是核心节奏判定入口。
 
-### `Assets/Scripts/VerticalRunner/VerticalBeatSpawner.cs`
-
-- 类型：`场景挂载`、`运行时创建辅助对象`
-- 所属场景：`VerticalRunner`
-- 用途：生成竖版路线，包括平台、长平台、香蕉、鹦鹉障碍、终点和所有生成的玩法对象。
-- 关键依赖：`VerticalRunnerSettings`、`VerticalRunnerTemplates`、`VerticalRunnerObjects`、`RuntimeScenePolicy`。
-- 是否建议改名：不建议。Manager 和 Baker 都会引用它。
-
-### `Assets/Scripts/VerticalRunner/VerticalRunnerUI.cs`
-
-- 类型：`场景挂载`、`运行时兜底创建`
-- 所属场景：`VerticalRunner`
-- 用途：绑定 `VerticalRunnerCanvas`，控制 HUD、节拍点、教程/规则弹窗、结果界面、伤害闪屏、游戏中 Retry/Back 按钮。
-- 关键依赖：`VerticalRunnerManager`、`SceneTransitionManager`、`VerticalRunnerCanvas` 下的固定 UI 路径。
-- 是否建议改名：不建议。Manager 和 Baker 都会挂载/创建它。
-
-### `Assets/Scripts/VerticalRunner/VerticalRunnerPlayer.cs`
-
-- 类型：`场景挂载`、`运行时创建`
-- 所属场景：`VerticalRunner`
-- 用途：玩家移动与状态。处理跳跃弧线、恢复、分支移动、拾取物/障碍碰撞、玩家 Sprite/Collider/Rigidbody。
-- 关键依赖：`VerticalRunnerPlatform`、`VerticalRunnerPickup`、`VerticalRunnerObstacle`。
-- 是否建议改名：不建议。玩家模板和生成流程会用到它。
-
-### `Assets/Scripts/VerticalRunner/VerticalRunnerCamera.cs`
-
-- 类型：`场景挂载`、`运行时创建`
-- 所属场景：`VerticalRunner`
-- 用途：竖版跑酷相机跟随辅助。
-- 关键依赖：`VerticalRunnerManager`、场景 Camera。
-- 是否建议改名：不建议。Manager/Baker 会引用它。
-
-### `Assets/Scripts/VerticalRunner/VerticalRunnerSettings.cs`
+#### `Assets/Scripts/VerticalRunner/Core/VerticalRunnerSettings.cs`
 
 - 类型：`数据/辅助`
 - 所属场景：`VerticalRunner`
@@ -178,15 +167,18 @@
 - 关键依赖：`VerticalRunnerManager`、`VerticalBeatSpawner`。
 - 是否建议改名：可以，但必须同步修改代码引用。
 
-### `Assets/Scripts/VerticalRunner/VerticalRunnerTemplates.cs`
+### World 世界/路线
 
-- 类型：`场景挂载`
+#### `Assets/Scripts/VerticalRunner/World/VerticalBeatSpawner.cs`
+
+- 类型：`场景挂载`、`运行时创建辅助对象`
 - 所属场景：`VerticalRunner`
-- 用途：保存 Hierarchy 中可编辑模板引用，例如玩家模板、平台模板、香蕉模板、障碍模板、终点模板和 runtime root。
-- 关键依赖：`VerticalBeatSpawner`、场景对象 `VerticalRunnerTemplates`。
-- 是否建议改名：不建议。场景和 Baker 引用它。
+- 用途：生成竖版路线，包括平台、长平台、香蕉、鹦鹉障碍、终点和所有生成的玩法对象。
+- 关键依赖：`VerticalRunnerSettings`、`VerticalRunnerTemplates`、`VerticalRunnerObjects`、`RuntimeScenePolicy`。
+- 是否建议改名：不建议。Manager 和 Baker 都会引用它。
+- 核心说明：`Build()` 和路线生成 helper 是平台、香蕉、鹦鹉和终点的生成中心。
 
-### `Assets/Scripts/VerticalRunner/VerticalRunnerObjects.cs`
+#### `Assets/Scripts/VerticalRunner/World/VerticalRunnerObjects.cs`
 
 - 类型：`运行时创建`、`数据/辅助`
 - 所属场景：`VerticalRunner`
@@ -194,13 +186,51 @@
 - 关键依赖：`RhythmManager`、`VerticalBeatSpawner`、`VerticalRunnerPlayer`。
 - 是否建议改名：可以，但必须同步修改代码引用。
 
-### `Assets/Scripts/VerticalRunner/VerticalScrollingBackground.cs`
+#### `Assets/Scripts/VerticalRunner/World/VerticalRunnerTemplates.cs`
+
+- 类型：`场景挂载`
+- 所属场景：`VerticalRunner`
+- 用途：保存 Hierarchy 中可编辑模板引用，例如玩家模板、平台模板、香蕉模板、障碍模板、终点模板和 runtime root。
+- 关键依赖：`VerticalBeatSpawner`、场景对象 `VerticalRunnerTemplates`。
+- 是否建议改名：不建议。场景和 Baker 引用它。
+
+#### `Assets/Scripts/VerticalRunner/World/VerticalScrollingBackground.cs`
 
 - 类型：`场景挂载`
 - 所属场景：`VerticalRunner`
 - 用途：生成并滚动竖向背景瓦片，让背景覆盖相机视野并避免明显接缝。
 - 关键依赖：Camera、SpriteRenderer、名为 `vertical` 的背景对象。
 - 是否建议改名：不建议。场景和 Baker 引用它。
+
+### Player 玩家
+
+#### `Assets/Scripts/VerticalRunner/Player/VerticalRunnerPlayer.cs`
+
+- 类型：`场景挂载`、`运行时创建`
+- 所属场景：`VerticalRunner`
+- 用途：玩家移动与状态。处理真实键盘输入、跳跃弧线、恢复、分支移动、拾取物/障碍碰撞、玩家 Sprite/Collider/Rigidbody。
+- 关键依赖：`VerticalRunnerManager`、`VerticalRunnerPlatform`、`VerticalRunnerPickup`、`VerticalRunnerObstacle`。
+- 是否建议改名：不建议。玩家模板和生成流程会用到它。
+- 核心说明：`Tick()` 是真实键盘输入读取和移动执行循环。
+
+#### `Assets/Scripts/VerticalRunner/Player/VerticalRunnerCamera.cs`
+
+- 类型：`场景挂载`、`运行时创建`
+- 所属场景：`VerticalRunner`
+- 用途：竖版跑酷相机跟随辅助。
+- 关键依赖：`VerticalRunnerManager`、场景 Camera。
+- 是否建议改名：不建议。Manager/Baker 会引用它。
+
+### UI 界面绑定
+
+#### `Assets/Scripts/VerticalRunner/UI/VerticalRunnerUI.cs`
+
+- 类型：`场景挂载`、`运行时兜底创建`
+- 所属场景：`VerticalRunner`
+- 用途：绑定 `VerticalRunnerCanvas`，控制 HUD、节拍点、教程/规则弹窗、结果界面、伤害闪屏、游戏中 Retry/Back 按钮。
+- 关键依赖：`VerticalRunnerManager`、`SceneTransitionManager`、`VerticalRunnerCanvas` 下的固定 UI 路径。
+- 是否建议改名：不建议。Manager 和 Baker 都会挂载/创建它。
+- 核心说明：`Build()` 绑定场景层级，`UpdateControlRhythmPrompt()` 驱动四列提示，`UpdateBeatLane()` 驱动节拍可视化。
 
 ## AdvancedRunner 高级跑酷
 
