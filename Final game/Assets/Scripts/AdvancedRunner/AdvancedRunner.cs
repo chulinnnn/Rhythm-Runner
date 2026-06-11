@@ -1,20 +1,10 @@
-// AdvancedRunner.cs is the central implementation file for the AdvancedRunner scene.
-// AdvancedRunner.cs 是 AdvancedRunner 场景的核心实现文件。
+//Update() 每帧总入口：算 beat、移目标、查漏按、读键盘、判结束
+//HandleInput() 按键后唯一判定入口：timing + 动作 + lane，命中或 Miss
+//GetBeatPosition()唯一游戏时钟；下落、漏按、判定都靠它
+//Tick() 每帧：平滑换道、跳起弧线、下滑缩扁
+//MoveLane() 改 lane；Manager 用 CurrentLane 判 lane 对不对
 //
-// Reading map / 阅读路线:
-// 1. AdvancedRunnerManager: scene bootstrap, game flow, chart generation, timing, and judging.
-//    AdvancedRunnerManager：场景启动、游戏流程、谱面生成、节拍时钟和输入判定。
-// 2. AdvancedRunnerPlayer: visual lane movement and short jump/slide poses.
-//    AdvancedRunnerPlayer：玩家在三条 lane 之间移动，以及 jump/slide 的表现动画。
-// 3. AdvancedRunnerUI: binds the existing AdvancedRunnerCanvas by hierarchy path.
-//    AdvancedRunnerUI：按 Hierarchy 路径绑定现有 AdvancedRunnerCanvas，不重新创建主 UI。
 //
-// Important architecture / 重要架构:
-// The scene owns editable objects and UI. Runtime code finds objects by name/path,
-// fills only missing runtime components, then controls dynamic state.
-// 场景 Hierarchy 负责可编辑对象和 UI；运行时代码按名字/路径查找，只补缺失组件，
-// 然后接管动态状态。改 Hierarchy 名字时，要同步改这里的绑定路径和 baker。
-
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -193,6 +183,7 @@ public class AdvancedFeedbackStyle
 // AdvancedRunnerConfig/* 这些 Hierarchy 配置对象来编辑。
 public class AdvancedRunnerSettings
 {
+    [Header("Music / Chart")]
     public float bpm = 126f;
     public float firstBeatOffset = 0f;
     public int startBeat = 4;
@@ -205,10 +196,20 @@ public class AdvancedRunnerSettings
     public AudioClip gameBgm;
     public float gameBpm = 126f;
     public float songDurationSeconds = 78f;
+
+    [Header("Timing / Judgment")]
+    [Tooltip("Seconds from target beat center for Perfect. Smaller = harder.")]
+    public float perfectWindowSeconds = 0.08f;
+    [Tooltip("Seconds from target beat center for Good. Must be >= Perfect window.")]
+    public float goodWindowSeconds = 0.15f;
+
+    [Header("World Layout")]
     public float judgementLineX = -4.5f;
     public float judgementLineY = -2.85f;
     public float targetBeatSpacingWorld = 2.15f;
     public float laneSpacing = 1.65f;
+
+    [Header("Rules / Score")]
     public int tutorialHearts = 3;
     public int gameHearts = 4;
     public int scorePerHit = 100;
@@ -1675,13 +1676,13 @@ public partial class AdvancedRunnerManager
 
     private float GetPerfectWindowBeats()
     {
-        float perfectWindowSeconds = RhythmManager.Instance != null ? RhythmManager.Instance.perfectWindow : 0.08f;
+        float perfectWindowSeconds = Mathf.Max(0.01f, settings.perfectWindowSeconds);
         return Mathf.Max(0.01f, perfectWindowSeconds / BeatInterval);
     }
 
     private float GetGoodWindowBeats()
     {
-        float goodWindowSeconds = RhythmManager.Instance != null ? RhythmManager.Instance.goodWindow : 0.15f;
+        float goodWindowSeconds = Mathf.Max(settings.perfectWindowSeconds, settings.goodWindowSeconds);
         return Mathf.Max(GetPerfectWindowBeats(), goodWindowSeconds / BeatInterval);
     }
 

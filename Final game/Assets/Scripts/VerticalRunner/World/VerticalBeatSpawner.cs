@@ -4,10 +4,9 @@ using UnityEngine;
 /// <summary>
 /// Procedural route builder for VerticalRunner: spawns platforms, banana pickups, parrot branches,
 /// obstacles, and the finish marker from scene templates or fallback sprites.
-/// </summary>
-/// <remarks>
-/// 中文：负责生成 VerticalRunner 的整条竖向路线（平台、香蕉、鹦鹉分支、障碍、终点）。
-/// 场景模板提供美术；运行时只克隆并写入 beat/连线等路线数据。Manager 和 Player 通过查询方法拿路线对象。
+/// Build() 总入口：清空 → 建 VerticalRunnerGenerated → 算 totalBeats → BuildRoute
+/// BuildRoute() 分发：起点平台 → 教程 or 正式路线
+///CreatePlatform() 克隆模板、写 beatIndex、登记 platformByBeat —— 看见的平台和 beat 数据在这里对齐
 /// </remarks>
 public class VerticalBeatSpawner : MonoBehaviour
 {
@@ -79,7 +78,10 @@ public class VerticalBeatSpawner : MonoBehaviour
             root = rootObject.transform;
         }
 
-        settings.beatsPerPlatform = 2;
+        if (settings.beatsPerPlatform < 1)
+        {
+            settings.beatsPerPlatform = 2;
+        }
 
         totalBeats = mode == VerticalRunnerMode.Tutorial
             ? 64

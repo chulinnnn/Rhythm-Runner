@@ -29,7 +29,16 @@ public class VerticalRunnerSettings
     public float bpm = 126f;
     public float firstBeatOffset = 0f;
     public float songDurationSeconds = 75f;
+    [Tooltip("Jump beat slot interval. 2 = jump every 2 beats. Also affects route platform spacing on rebuild.")]
     public int beatsPerPlatform = 2;
+    [Tooltip("Within a valid beat slot: fraction from beat start (0-1) that counts as Perfect. Smaller = harder.")]
+    [Range(0.05f, 0.95f)]
+    public float perfectBeatFraction = 0.45f;
+    [Tooltip("Within a valid beat slot: fraction from beat start (0-1) that still counts as Good. Above this = Miss.")]
+    [Range(0.1f, 1f)]
+    public float goodBeatFraction = 1f;
+    [Tooltip("When enabled, only Perfect counts as success; Good is treated as Miss for score and feedback.")]
+    public bool requirePerfectForSuccess = false;
     public float actionWindowBeats = 0.32f;
     public int countdownBeats = 8;
 

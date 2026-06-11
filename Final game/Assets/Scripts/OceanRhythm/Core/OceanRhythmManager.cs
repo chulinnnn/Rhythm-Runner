@@ -5,18 +5,9 @@ using UnityEngine.SceneManagement;
 
 // OceanRhythmManager is the scene-level gameplay owner for OceanRhythm.
 // OceanRhythmManager 是 OceanRhythm 场景的玩法主控。
-// 最核心的是update()函数，JudgeSpaceInput()负责节奏判定
-// Reading map / 阅读入口:
-// - Awake/Start: bind required helpers and enter Free Pond.
-// - Update: main runtime loop for selection, beat ticks, and Space input.
-// - JudgeSpaceInput: converts Space timing into hit quality.
-// - EnterFreePond/UpdateFreePondSelection: fish selection, intro cards, and preview flow.
-// - AwardCatch/SoundMatch methods: bucket rewards and Singing Shell mini-game.
-//
-// Visual ownership / 视觉归属:
-// Inspector fields provide fallback sprites and music data, but the scene hierarchy
-// owns card layouts, bucket album layout, button styling, and editable UI art.
-// Inspector 字段提供兜底图和音乐数据；卡片、桶相册、按钮样式和 UI 美术由场景层级控制。
+// Update() 每帧总入口：选鱼、推进节拍（OnBeat）、读 Space
+//JudgeSpaceInput() 核心节奏判定：输入时间 vs 最近一拍 → Perfect/Good/Near/Miss
+// JudgeFreePondInput() 把判定结果接到玩法：加捕捉进度、抓满发奖、重生/移除鱼
 
 /// <summary>
 /// Describes the high-level OceanRhythm gameplay phase.

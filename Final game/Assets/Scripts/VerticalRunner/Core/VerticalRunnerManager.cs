@@ -4,10 +4,14 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 // VerticalRunnerManager is the scene-level gameplay owner for VerticalRunner.
-// VerticalRunnerManager 是 VerticalRunner 场景的玩法主控。
+
+//Update() 每帧总入口：视觉节拍 → player.Tick() → 相机 → HUD
+//GetBeatPosition() 当前第几拍；跳跃拍/动作拍、漏按检测都靠它
 //ReportJumpInput：Space 跳跃是否踩准节拍。
 //ReportCoinInput：Down/S 抓香蕉是否踩准动作拍。
 //ReportDirectionalDodge：鹦鹉分支是否在正确拍子按对方向，并且按住 Space。
+
+
 [DefaultExecutionOrder(-1000)]
 public class VerticalRunnerManager : MonoBehaviour
 {
@@ -516,7 +520,19 @@ public class VerticalRunnerManager : MonoBehaviour
     private RhythmTimingResult JudgeCurrentBeatFraction()
     {
         float beatFraction = GetBeatPosition() - Mathf.Floor(GetBeatPosition());
-        return beatFraction <= 0.45f ? RhythmTimingResult.Perfect : RhythmTimingResult.Good;
+        float perfectFraction = Mathf.Clamp(settings.perfectBeatFraction, 0.05f, 0.95f);
+        float goodFraction = Mathf.Clamp(settings.goodBeatFraction, perfectFraction, 1f);
+        if (beatFraction <= perfectFraction)
+        {
+            return RhythmTimingResult.Perfect;
+        }
+
+        if (beatFraction <= goodFraction)
+        {
+            return RhythmTimingResult.Good;
+        }
+
+        return RhythmTimingResult.Miss;
     }
 
     /// <summary>
@@ -573,6 +589,11 @@ public class VerticalRunnerManager : MonoBehaviour
     /// </remarks>
     private bool IsTimingHit(RhythmTimingResult result)
     {
+        if (settings.requirePerfectForSuccess)
+        {
+            return result == RhythmTimingResult.Perfect;
+        }
+
         return result == RhythmTimingResult.Perfect || result == RhythmTimingResult.Good;
     }
 

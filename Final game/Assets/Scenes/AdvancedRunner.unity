@@ -2933,6 +2933,8 @@ MonoBehaviour:
     startBeat: 4
     countdownBeats: 0
     beatsPerAction: 2
+    perfectWindowSeconds: 0.08
+    goodWindowSeconds: 0.15
     sceneBgm: {fileID: 0}
     sceneBpm: 126
     tutorialBgm: {fileID: 0}

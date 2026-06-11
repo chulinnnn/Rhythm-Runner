@@ -8,9 +8,11 @@ using UnityEngine;
 /// 中文：这是 VerticalRunner 里真正控制玩家角色的脚本。它负责读取键盘、执行跳跃、
 /// 抓香蕉、处理鹦鹉分支、碰撞和失败后的回到安全平台。节拍判定和分数仍由
 /// <see cref="VerticalRunnerManager"/> 负责。
-/// 核心是 Tick() 驱动的输入-动作循环；
-/// 最有价值的设计是 Player 只管「做什么」，Manager 只管「做得对不对」，
-/// </remarks>
+
+///Tick() 每帧总入口：漏按检测 → 读键 → 跳跃/香蕉/鹦鹉 → 更新跳跃弧线 → 掉落检测
+///TryBeatJump()Space 跳跃典型流程：找下一平台 → manager.ReportJumpInput → StartJump
+/// 
+/// 
 public class VerticalRunnerPlayer : MonoBehaviour
 {
     private VerticalRunnerManager manager;

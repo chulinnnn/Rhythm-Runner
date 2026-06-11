@@ -10181,6 +10181,9 @@ MonoBehaviour:
     firstBeatOffset: 0
     songDurationSeconds: 75
     beatsPerPlatform: 2
+    perfectBeatFraction: 0.45
+    goodBeatFraction: 1
+    requirePerfectForSuccess: 0
     actionWindowBeats: 0.32
     countdownBeats: 8
     startBeat: 2

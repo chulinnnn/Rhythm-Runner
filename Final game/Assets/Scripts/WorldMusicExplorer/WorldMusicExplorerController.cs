@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-
+//ShowItem(int index)切换条目
 [DefaultExecutionOrder(-120)]
 public class WorldMusicExplorerController : MonoBehaviour
 {
