@@ -3,7 +3,7 @@
 Coursework repository: in-class 2D shooter, early prototypes, classroom records, and capstone **Rhythm Playground**.
 
 **Repository:** [github.com/chulinnnn/Rhythm-Runner](https://github.com/chulinnnn/Rhythm-Runner)  
-**Latest capstone commit:** `ea5ee35` (HEAD) — evidence pack: `8753910` — [COMMITS.md](Final%20game/Docs/COMMITS.md)
+**Latest capstone commit:** `2fd85b5` (HEAD) — see [COMMITS.md](Final%20game/Docs/COMMITS.md)
 
 ---
 
