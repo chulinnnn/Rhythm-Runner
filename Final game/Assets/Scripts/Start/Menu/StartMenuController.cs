@@ -9,8 +9,6 @@ using UnityEngine.UI;
 [DefaultExecutionOrder(-150)]
 public class StartMenuController : MonoBehaviour
 {
-    private const string MasterVolumeKey = "StartMenu_MasterVolume";
-
     private static bool registered;
 
     [Header("Scene routes")]
@@ -127,12 +125,27 @@ public class StartMenuController : MonoBehaviour
         BindButton(existing.transform, "Root/AboutPanel/Card/CloseButton", delegate { aboutPanel.SetActive(false); });
         BindButton(existing.transform, "Root/SettingsPanel/Card/CloseButton", delegate { settingsPanel.SetActive(false); });
         BindButton(existing.transform, "Root/RecordsPanel/Card/CloseButton", delegate { recordsPanel.SetActive(false); });
-        BindSlider(existing.transform, "Root/SettingsPanel/Card/SettingsContent/MasterVolumeRow/Slider", MasterVolumeKey, delegate(float value)
-        {
-            PlayerPrefs.SetFloat(MasterVolumeKey, value);
-            AudioListener.volume = value;
-            PlayerPrefs.Save();
-        });
+        BindSlider(
+            existing.transform,
+            "Root/SettingsPanel/Card/SettingsContent/MasterVolumeRow/Slider",
+            StartMenuAudioSettings.MasterVolumeKey,
+            delegate(float value)
+            {
+                PlayerPrefs.SetFloat(StartMenuAudioSettings.MasterVolumeKey, value);
+                StartMenuAudioSettings.ApplyMasterVolume();
+                PlayerPrefs.Save();
+            });
+        BindSlider(
+            existing.transform,
+            "Root/SettingsPanel/Card/SettingsContent/MusicVolumeRow/Slider",
+            StartMenuAudioSettings.MusicVolumeKey,
+            delegate(float value)
+            {
+                PlayerPrefs.SetFloat(StartMenuAudioSettings.MusicVolumeKey, value);
+                ApplyMenuMusicVolume();
+                PlayerPrefs.Save();
+            });
+        BindBeatPromptsToggle(existing.transform);
         EnsureMusicDecorations(existing.transform);
 
         aboutPanel.SetActive(false);
@@ -141,10 +154,65 @@ public class StartMenuController : MonoBehaviour
         return true;
     }
 
+    private void BindBeatPromptsToggle(Transform menuRoot)
+    {
+        Transform toggle = menuRoot.Find("Root/SettingsPanel/Card/SettingsContent/BeatPromptsRow/Toggle");
+        if (toggle == null)
+        {
+            return;
+        }
+
+        Transform onState = toggle.Find("OnState");
+        Transform offState = toggle.Find("OffState");
+        bool enabled = StartMenuAudioSettings.BeatPromptsEnabled;
+        SyncBeatPromptStates(onState, offState, enabled);
+
+        Transform hitArea = toggle.Find("HitArea");
+        Button button = hitArea != null ? hitArea.GetComponent<Button>() : toggle.GetComponent<Button>();
+        if (button == null && hitArea != null)
+        {
+            button = hitArea.gameObject.AddComponent<Button>();
+        }
+
+        if (button == null)
+        {
+            return;
+        }
+
+        button.onClick.RemoveAllListeners();
+        button.onClick.AddListener(delegate
+        {
+            enabled = !enabled;
+            PlayerPrefs.SetInt(StartMenuAudioSettings.BeatAssistKey, enabled ? 1 : 0);
+            PlayerPrefs.Save();
+            SyncBeatPromptStates(onState, offState, enabled);
+        });
+    }
+
+    private static void SyncBeatPromptStates(Transform onState, Transform offState, bool enabled)
+    {
+        if (onState != null)
+        {
+            onState.gameObject.SetActive(enabled);
+        }
+        if (offState != null)
+        {
+            offState.gameObject.SetActive(!enabled);
+        }
+    }
+
+    private void ApplyMenuMusicVolume()
+    {
+        GameObject menuMusic = GameObject.Find("menuMusic");
+        if (menuMusic != null)
+        {
+            AudioSource source = menuMusic.GetComponent<AudioSource>();
+            StartMenuAudioSettings.ApplyMusicVolume(source, 0.85f);
+        }
+    }
+
     private void EnsureMusicDecorations(Transform menuRoot)
     {
-        // EN: The music object supplies hierarchy-owned note art; runtime may add only the visualizer component.
-        // ZH: music 对象提供可在 Hierarchy 编辑的音符素材；运行时只补 visualizer 组件。
         Transform root = menuRoot.Find("Root");
         if (root == null)
         {
@@ -241,8 +309,14 @@ public class StartMenuController : MonoBehaviour
             }
         }
 
-        CreateRecordSection(content, "Rhythm Runner", LeaderboardManager.GetScores(LeaderboardMode.Easy));
+        CreateRecordSection(content, "Rhythm Runner (Vertical)", LeaderboardManager.GetScores(LeaderboardMode.Easy));
         CreateRecordSection(content, "Advanced Runner", LeaderboardManager.GetScores(LeaderboardMode.Hard));
+
+        RectTransform contentRect = content as RectTransform;
+        if (contentRect != null)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
+        }
     }
 
     private void CreateRecordSection(Transform parent, string title, List<int> scores)
@@ -250,19 +324,18 @@ public class StartMenuController : MonoBehaviour
         CreateRecordRow(parent, "SectionTemplate", title + "Title", title);
         if (scores.Count == 0)
         {
-            CreateRecordRow(parent, "RecordItemTemplate", title + "Empty", "No record yet");
+            CreateRecordRow(parent, "RecordItemTemplate", title + "Empty", "No runs saved yet");
             return;
         }
 
         for (int i = 0; i < scores.Count; i++)
         {
-            CreateRecordRow(parent, "RecordItemTemplate", title + "Row" + i, (i + 1) + ". " + scores[i] + " m");
+            CreateRecordRow(parent, "RecordItemTemplate", title + "Row" + i, (i + 1) + ". " + scores[i] + " pts");
         }
     }
 
     private void CreateRecordRow(Transform parent, string templateName, string nameSuffix, string value)
     {
-        // EN/ZH: Only dynamic score text changes; template styling remains Hierarchy-owned. / 只更新动态分数文字，模板样式仍由 Hierarchy 控制。
         Transform template = parent.Find(templateName);
         if (template == null)
         {
@@ -332,7 +405,8 @@ public class StartMenuController : MonoBehaviour
 
     private void ApplySavedSettings()
     {
-        AudioListener.volume = PlayerPrefs.GetFloat(MasterVolumeKey, 0.85f);
+        StartMenuAudioSettings.ApplyMasterVolume();
+        ApplyMenuMusicVolume();
     }
 
 #if UNITY_EDITOR

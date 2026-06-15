@@ -1,47 +1,47 @@
-name: 工单
-description: Rhythm Runner 日常任务
+name: Task
+description: Rhythm Runner day-to-day work item
 title: "RR-"
 body:
   - type: input
     id: rr_id
     attributes:
-      label: 卡片号（可选）
-      description: 例如 RR-049，没有就先留空
+      label: Card ID (optional)
+      description: e.g. RR-049 — leave blank if not assigned yet
       placeholder: RR-049
     validations:
       required: false
   - type: textarea
     id: what
     attributes:
-      label: 要做什么
-      description: 两三句话说清楚，别写长 checklist
-      placeholder: Vertical 教程里 Retry 之后还想跳过 briefing……
+      label: What to do
+      description: A few plain sentences — no long checklist
+      placeholder: After Retry in Vertical tutorial, skip the briefing…
     validations:
       required: true
   - type: textarea
     id: done
     attributes:
-      label: 怎么算做完
-      placeholder: Play 一遍，Retry 后不再播那段说明；Console 干净。
+      label: Done when
+      placeholder: Play once — Retry skips briefing; Console clean.
     validations:
       required: true
   - type: dropdown
     id: epic
     attributes:
-      label: 大概属于哪块
+      label: Area
       options:
-        - E-01 Start / 共用
+        - E-01 Start / shared
         - E-02 WorldMusicExplorer
         - E-03 Ocean
         - E-04 Vertical
         - E-05 Advanced
-        - E-06 测试 / 提交 / 文档
+        - E-06 QA / submission / docs
     validations:
       required: false
   - type: dropdown
     id: priority
     attributes:
-      label: 急不急
+      label: Priority
       options:
         - P1
         - P2

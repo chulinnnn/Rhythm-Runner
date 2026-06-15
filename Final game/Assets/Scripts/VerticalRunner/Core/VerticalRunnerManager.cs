@@ -1174,7 +1174,7 @@ public class VerticalRunnerManager : MonoBehaviour
         }
         if (ui != null)
         {
-            ui.SetGameControlsVisible(mode == VerticalRunnerMode.Game && !runEnded && !waitingForBriefing && !waitingForGameRules);
+            ui.SetGameControlsVisible(ShouldShowGameControls());
         }
         if (player != null && !runEnded && !waitingForBriefing && !waitingForGameRules)
         {
@@ -1502,6 +1502,25 @@ public class VerticalRunnerManager : MonoBehaviour
             ui.SetGameControlsVisible(false);
             ui.ShowResult(completed, score, missCount, coins, maxCombo);
         }
+
+        if (mode == VerticalRunnerMode.Game && score > 0)
+        {
+            LeaderboardManager.SaveScore(LeaderboardMode.Easy, score);
+        }
+    }
+
+    /// <summary>
+    /// Returns whether Back/Retry should be visible during active tutorial or game play.
+    /// </summary>
+    /// <remarks>
+    /// 中文：教程和正式模式在倒计时结束、可操作后都显示 Back/Retry；说明页、规则页、结算页隐藏。
+    /// </remarks>
+    private bool ShouldShowGameControls()
+    {
+        return !runEnded
+            && !waitingForBriefing
+            && !waitingForGameRules
+            && !waitingForCountdown;
     }
 
     /// <summary>
@@ -1555,6 +1574,11 @@ public class VerticalRunnerManager : MonoBehaviour
         };
 
         if (runEnded || waitingForBriefing || waitingForGameRules)
+        {
+            return state;
+        }
+
+        if (!StartMenuAudioSettings.BeatPromptsEnabled)
         {
             return state;
         }

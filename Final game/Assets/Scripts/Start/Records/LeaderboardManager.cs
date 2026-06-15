@@ -28,15 +28,15 @@ public static class LeaderboardManager
         return LeaderboardMode.Easy;
     }
 
-    public static void SaveScore(LeaderboardMode mode, int distanceMeters)
+    public static void SaveScore(LeaderboardMode mode, int score)
     {
-        if (distanceMeters <= 0)
+        if (score <= 0)
         {
             return;
         }
 
         List<int> scores = GetScores(mode);
-        scores.Add(distanceMeters);
+        scores.Add(score);
         scores.Sort((a, b) => b.CompareTo(a));
 
         if (scores.Count > MaxEntries)

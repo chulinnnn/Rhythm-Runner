@@ -381,6 +381,37 @@ public static class AllSceneHierarchyBaker
         Save(scene);
     }
 
+    [MenuItem("Tools/Rhythm Runner/Fix Start Records and Settings Panels")]
+    public static void FixStartRecordsAndSettingsPanels()
+    {
+        Scene scene = EditorSceneManager.OpenScene("Assets/Scenes/Start.unity", OpenSceneMode.Single);
+        Transform root = GameObject.Find("StartMenuCanvas/Root")?.transform;
+        if (root == null)
+        {
+            Debug.LogWarning("AllSceneHierarchyBaker: StartMenuCanvas/Root not found.");
+            return;
+        }
+
+        Transform settingsCard = root.Find("SettingsPanel/Card");
+        if (settingsCard != null)
+        {
+            EnsureSettingsPanelContent(settingsCard);
+        }
+
+        Transform recordsCard = root.Find("RecordsPanel/Card");
+        if (recordsCard != null)
+        {
+            EnsureRecordsPanelContent(recordsCard);
+        }
+
+        Save(scene);
+    }
+
+    public static void FixStartRecordsAndSettingsPanelsForBatchmode()
+    {
+        FixStartRecordsAndSettingsPanels();
+    }
+
     [MenuItem("Tools/Rhythm Runner/Rebuild World Music Explorer Hierarchy")]
     public static void RebuildWorldMusicExplorerScene()
     {
@@ -1694,8 +1725,7 @@ public static class AllSceneHierarchyBaker
 
         if (name == "RecordsPanel")
         {
-            GameObject content = EnsureMissingRect(card.transform, "RecordsContent", new Vector2(0.5f, 0.52f), Vector2.zero, new Vector2(760f, 330f));
-            EnsureStartRecordTemplates(content.transform);
+            EnsureRecordsPanelContent(card.transform);
         }
         else if (name != "SettingsPanel")
         {
@@ -1718,8 +1748,94 @@ public static class AllSceneHierarchyBaker
             return;
         }
 
+        EnsureSettingsPanelContent(card);
+    }
+
+    private static void EnsureSettingsPanelContent(Transform card)
+    {
         GameObject content = EnsureMissingRect(card, "SettingsContent", new Vector2(0.5f, 0.52f), Vector2.zero, new Vector2(760f, 330f));
+        EnsureMissingVerticalLayout(content, 8f);
+        ReparentNamedChild(content.transform, "MasterVolumeRow");
         EnsureSettingRow(content.transform, "MasterVolumeRow", "Master Volume", true);
+        EnsureSettingRow(content.transform, "MusicVolumeRow", "Music Volume", true);
+        EnsureBeatPromptsRow(content.transform);
+    }
+
+    private static void EnsureBeatPromptsRow(Transform parent)
+    {
+        GameObject row = EnsureMissingRect(parent, "BeatPromptsRow", Vector2.zero, Vector2.zero, new Vector2(760f, 66f));
+        EnsureMissingText(row.transform, "Label", "Show beat prompts", new Vector2(0.18f, 0.5f), Vector2.zero, new Vector2(260f, 56f), 22, FontStyle.Bold, Color.white);
+        GameObject toggle = EnsureMissingRect(row.transform, "Toggle", new Vector2(0.68f, 0.5f), Vector2.zero, new Vector2(180f, 52f));
+        GameObject hitArea = EnsureMissingRect(toggle.transform, "HitArea", Vector2.zero, Vector2.zero, Vector2.zero);
+        RectTransform hitRect = hitArea.GetComponent<RectTransform>();
+        hitRect.anchorMin = Vector2.zero;
+        hitRect.anchorMax = Vector2.one;
+        hitRect.anchoredPosition = Vector2.zero;
+        hitRect.sizeDelta = Vector2.zero;
+        if (hitArea.GetComponent<Button>() == null)
+        {
+            hitArea.AddComponent<Button>();
+        }
+        Image hitImage = hitArea.GetComponent<Image>();
+        if (hitImage == null)
+        {
+            hitImage = hitArea.AddComponent<Image>();
+        }
+        hitImage.color = new Color(1f, 1f, 1f, 0.01f);
+        hitImage.raycastTarget = true;
+
+        GameObject onState = EnsureMissingPanel(toggle.transform, "OnState", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(84f, 44f), new Color(0.2f, 0.75f, 0.35f, 1f));
+        EnsureMissingText(onState.transform, "Label", "ON", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(72f, 36f), 20, FontStyle.Bold, Color.white);
+        GameObject offState = EnsureMissingPanel(toggle.transform, "OffState", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(84f, 44f), new Color(0.45f, 0.45f, 0.45f, 1f));
+        EnsureMissingText(offState.transform, "Label", "OFF", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(72f, 36f), 20, FontStyle.Bold, Color.white);
+        foreach (Graphic graphic in toggle.GetComponentsInChildren<Graphic>(true))
+        {
+            if (graphic.gameObject != hitArea)
+            {
+                graphic.raycastTarget = false;
+            }
+        }
+    }
+
+    private static void ReparentNamedChild(Transform parent, string childName)
+    {
+        Transform child = parent.Find(childName);
+        if (child != null)
+        {
+            return;
+        }
+
+        Transform searchRoot = parent.parent != null ? parent.parent : parent;
+        foreach (Transform t in searchRoot.GetComponentsInChildren<Transform>(true))
+        {
+            if (t.name == childName)
+            {
+                t.SetParent(parent, false);
+                return;
+            }
+        }
+    }
+
+    private static void EnsureMissingVerticalLayout(GameObject obj, float spacing)
+    {
+        if (obj == null)
+        {
+            return;
+        }
+
+        VerticalLayoutGroup layout = obj.GetComponent<VerticalLayoutGroup>();
+        if (layout == null)
+        {
+            layout = obj.AddComponent<VerticalLayoutGroup>();
+        }
+
+        layout.childAlignment = TextAnchor.UpperCenter;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = false;
+        layout.spacing = spacing;
+        layout.padding = new RectOffset(8, 8, 8, 8);
     }
 
     private static void EnsureSettingRow(Transform parent, string name, string label, bool slider)
@@ -1736,6 +1852,23 @@ public static class AllSceneHierarchyBaker
             EnsureMissingRect(sliderObj.transform, "FillArea", Vector2.zero, Vector2.zero, new Vector2(400f, 30f));
             EnsureMissingImage(EnsureMissingRect(sliderObj.transform, "Handle", new Vector2(0f, 0.5f), Vector2.zero, new Vector2(32f, 48f)), Color.white);
         }
+    }
+
+    private static void EnsureRecordsPanelContent(Transform card)
+    {
+        GameObject content = EnsureMissingRect(card, "RecordsContent", new Vector2(0.5f, 0.52f), Vector2.zero, new Vector2(760f, 330f));
+        EnsureMissingVerticalLayout(content, 6f);
+        EnsureMissingText(
+            content.transform,
+            "IntroText",
+            "Best scores from Rhythm Runner and Advanced Runner. Play a run to add a row.",
+            new Vector2(0.5f, 0.5f),
+            Vector2.zero,
+            new Vector2(720f, 48f),
+            20,
+            FontStyle.Normal,
+            new Color(0.92f, 0.96f, 1f, 1f));
+        EnsureStartRecordTemplates(content.transform);
     }
 
     private static void EnsureStartRecordTemplates(Transform content)

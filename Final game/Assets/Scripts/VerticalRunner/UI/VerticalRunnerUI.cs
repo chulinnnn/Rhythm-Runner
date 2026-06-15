@@ -605,6 +605,30 @@ public class VerticalRunnerUI : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Shows one ObjectivePanel tutorial image during formal game play based on run progress.
+    /// </summary>
+    /// <remarks>
+    /// 中文：正式模式也显示教程配图。按歌曲进度在 6 张图之间切换，和教程步骤用同一套 Hierarchy 图片。
+    /// </remarks>
+    private void ShowGameTutorialImage(float progress01)
+    {
+        if (tutorialStepImages.Count == 0)
+        {
+            if (tutorialImagesRoot != null)
+            {
+                tutorialImagesRoot.SetActive(false);
+            }
+            return;
+        }
+
+        int imageIndex = Mathf.Clamp(
+            Mathf.FloorToInt(Mathf.Clamp01(progress01) * tutorialStepImages.Count),
+            0,
+            tutorialStepImages.Count - 1);
+        ShowTutorialStepImage(imageIndex);
+    }
+
     public void ShowTutorialBriefing()
     {
         SetGameControlsVisible(false);
@@ -705,7 +729,7 @@ public class VerticalRunnerUI : MonoBehaviour
         objectiveProgressText.text = BuildProgressDots(0, 5);
         objectiveRuleText.text = "Banana  Parrot";
         tutorialObjectiveActive = false;
-        ShowTutorialStepImage(-1);
+        ShowGameTutorialImage(0f);
     }
 
     public void UpdateTutorialObjective(string objective, string hint, int current, int required)
@@ -722,9 +746,13 @@ public class VerticalRunnerUI : MonoBehaviour
         comboText.text = comboValueOnly ? bananas + " / " + combo + " / " + maxCombo : "Bananas " + bananas + "  Combo " + combo + "  Best " + maxCombo;
         progressFill.fillAmount = Mathf.Clamp01(progress01);
         progressText.text = Mathf.RoundToInt(progress01 * 100f) + "%";
-        if (!tutorialObjectiveActive && objectiveProgressText != null)
+        if (!tutorialObjectiveActive)
         {
-            objectiveProgressText.text = BuildProgressDots(Mathf.RoundToInt(Mathf.Clamp01(progress01) * 5f), 5);
+            ShowGameTutorialImage(progress01);
+            if (objectiveProgressText != null)
+            {
+                objectiveProgressText.text = BuildProgressDots(Mathf.RoundToInt(Mathf.Clamp01(progress01) * 5f), 5);
+            }
         }
     }
 

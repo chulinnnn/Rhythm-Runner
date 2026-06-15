@@ -59,6 +59,15 @@ public class StartMenuMusicVisualizer : MonoBehaviour
         EnsureStaffLines();
         ResolveBeatSource();
         fallbackBeatStartTime = Time.unscaledTime;
+        ApplyBeatSourceVolume();
+    }
+
+    private void ApplyBeatSourceVolume()
+    {
+        if (beatSource != null)
+        {
+            StartMenuAudioSettings.ApplyMusicVolume(beatSource, 0.85f);
+        }
     }
 
     private void OnEnable()
@@ -79,6 +88,7 @@ public class StartMenuMusicVisualizer : MonoBehaviour
 
     private void Update()
     {
+        ApplyBeatSourceVolume();
         if (templates.Count == 0)
         {
             if (!warnedMissingTemplates)

@@ -733,6 +733,7 @@ public class OceanRhythmManager : MonoBehaviour
             musicSource.loop = true;
             musicSource.clip = clip;
             musicSource.Play();
+            StartMenuAudioSettings.ApplyMusicVolume(musicSource, 0.85f);
         }
         else if (musicSource.isPlaying)
         {
@@ -771,6 +772,8 @@ public class OceanRhythmManager : MonoBehaviour
         {
             musicSource.Play();
         }
+
+        StartMenuAudioSettings.ApplyMusicVolume(musicSource, 0.85f);
     }
 
     /// <summary>

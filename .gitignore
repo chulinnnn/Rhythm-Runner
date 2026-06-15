@@ -30,3 +30,8 @@
 # OS files
 .DS_Store
 Thumbs.db
+
+# Never commit executables or accidental downloads under Assets
+**/*.exe
+**/*.dll
+!**/Plugins/**/*.dll

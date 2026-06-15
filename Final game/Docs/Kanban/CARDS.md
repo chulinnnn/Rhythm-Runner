@@ -1,136 +1,136 @@
-# 卡片登记
+# Card register
 
-和 [BOARD.md](./BOARD.md) 对表用。新卡先写这里，再拖 GitHub Project。
+Pair with [BOARD.md](./BOARD.md). Add a card here before opening a GitHub Issue.
 
 ---
 
-## RR-001 老 bunny 归档到 BunnyLegacyArchive
+## RR-001 Archive legacy bunny to BunnyLegacyArchive
 
 E-06 / P1 / Done / 2026-06-04
 
-旧横版 bunny 的脚本、prefab、背景从 `Assets` 挪到 `../BunnyLegacyArchive`，Unity 别再编译那套。
+Moved old horizontal bunny scripts, prefabs, and backgrounds out of `Assets` into `../BunnyLegacyArchive` so Unity no longer compiles that stack.
 
-做完：Assets 里搜不到 legacy bunny；Editor 能正常进 Start。
+Done: no legacy bunny under `Assets`; Editor opens `Start` cleanly.
 
 ---
 
-## RR-002 Start 四模式进场景
+## RR-002 Start routes to four mode scenes
 
 E-01 / P1 / Done / 2026-06-05
 
-Start 上四个模式卡片分别进 Ocean、Vertical、Advanced、WorldMusicExplorer。
+Each mode card on `Start` loads Ocean, Vertical, Advanced, or WorldMusicExplorer.
 
-做完：点每张卡都能加载对应场景，Back 能回 Start。
+Done: every card loads the right scene; Back returns to `Start`.
 
 ---
 
-## RR-003 WorldMusicExplorer 场景
+## RR-003 WorldMusicExplorer scene
 
 E-02 / P1 / Done / 2026-06-11
 
-新建 `WorldMusicExplorer` 场景和 `WorldMusicExplorerController`，键盘切换条目、播 AudioSource、切视觉层。
+Added `WorldMusicExplorer` scene and `WorldMusicExplorerController`: keyboard item switch, AudioSource playback, visual layer toggles.
 
-做完：进场景能换条目听歌，Back 回 Start；不碰 Hierarchy 里摆好的图。
+Done: items cycle and play in scene; Back to `Start`; Hierarchy art stays editor-owned.
 
 ---
 
-## RR-004 Ocean Free Pond + 曲目库
+## RR-004 Ocean Free Pond and track pools
 
 E-03 / P1 / Done / 2026-06-04
 
-Free Pond 用 `gameplayTracks` / `tutorialTracks` 分池，鱼按 meter 选歌。
+Free Pond uses separate `tutorialTracks` and `gameplayTracks`; fish pick songs by meter.
 
-做完：进 Pond 能选鱼开玩，换歌逻辑在 manager 里可读。
+Done: pond play works; track logic lives in the manager.
 
 ---
 
-## RR-005 Ocean Bucket 相册 UI
+## RR-005 Ocean Bucket album UI
 
 E-03 / P1 / Done / 2026-06-11
 
-Bucket 相册分页、装饰拖拽的 Hierarchy 契约和脚本绑好。
+Bucket album paging and decoration drag match the scene hierarchy contract.
 
-做完：翻页、拖装饰不挡玩法；缺节点时 baker 只补不盖。
+Done: page flip and drag work without blocking play; bakers only fill missing nodes.
 
 ---
 
-## RR-006 Vertical 教程和正式合一场景
+## RR-006 Vertical tutorial and game in one scene
 
 E-04 / P1 / Done / 2026-06-05
 
-`VerticalRunner.unity` 教程打完不切 `Game`，同场景进正式模式。
+`VerticalRunner.unity` runs tutorial then formal mode without loading `Game`.
 
-做完：教程通关后路线重建、分数重置，无多余场景跳转。
+Done: tutorial completion rebuilds route and resets score in the same scene.
 
 ---
 
-## RR-007 VerticalBeatSpawner 路线生成
+## RR-007 VerticalBeatSpawner route generation
 
 E-04 / P1 / Done / 2026-06-04
 
-平台/香蕉/鹦鹉分支按 beat 规则生成，教程和正式两套 builder。
+Platforms, bananas, and parrot branches spawn from beat rules; tutorial and game builders.
 
-做完：改 settings 重建路线，跳拍和分支间隔符合设计。
+Done: rebuilding from settings keeps jump spacing and branch timing correct.
 
 ---
 
-## RR-008 Vertical 用 miss 计数不用爱心死
+## RR-008 Vertical miss counter instead of heart death
 
 E-04 / P1 / Done / 2026-06-05
 
-正式模式记 miss 而不是扣爱心死亡；HUD 显示分数、香蕉、combo、miss。
+Formal mode tracks misses instead of heart-based death; HUD shows score, bananas, combo, misses.
 
-做完：连续失误走 miss 逻辑，和教程心形反馈分开。
+Done: miss flow is separate from tutorial heart feedback.
 
 ---
 
-## RR-009 Advanced 单场景 + 谱面表
+## RR-009 Advanced single scene and chart table
 
 E-05 / P1 / Done / 2026-06-05
 
-Advanced 教程和正式同在 `AdvancedRunner.unity`，谱面走 chart table。
+Tutorial and game share `AdvancedRunner.unity`; charts come from the table.
 
-做完：进场景能完整跑一局，目标从模板 spawn。
+Done: full run works; targets spawn from templates.
 
 ---
 
-## RR-010 Advanced 双节拍钟（视觉延迟）
+## RR-010 Advanced dual beat clock with visual delay
 
 E-05 / P1 / Done / 2026-06-07
 
-判定节拍和 `visualBeatDelaySeconds` 分开，提示列跟视觉拍对齐。
+Judgment beat clock is separate from `visualBeatDelaySeconds`; prompt column follows visual timing.
 
-做完：改 delay 只动提示，判定窗口仍跟音乐。
+Done: changing delay moves prompts only; judgment still follows the music.
 
 ---
 
-## RR-011 Start 节拍辅助开关
+## RR-011 Start beat-assist toggle
 
 E-01 / P1 / Done / 2026-06-10
 
-Settings 里 beat-assist 开关持久化，关的时候 Vertical/Advanced 藏四列 `ControlRhythmPrompt`。
+Beat-assist in Settings persists; when off, Vertical/Advanced hide the four `ControlRhythmPrompt` columns.
 
-做完：开关状态保存，runner 里提示显隐正确，玩法不受影响。
+Done: toggle saves; runners show/hide prompts correctly; gameplay unchanged.
 
 ---
 
-## RR-012 Vertical/Advanced Inspector 调参
+## RR-012 Vertical/Advanced Inspector tuning
 
 E-04/E-05 / P1 / Done / 2026-06-11
 
-`perfectBeatFraction`、`goodBeatFraction`、窗口秒数等进 settings，场景里能改。
+`perfectBeatFraction`, `goodBeatFraction`, window seconds, etc. live in settings and scenes.
 
-做完：调 Inspector 能改变判定手感，不用改硬编码。
+Done: Inspector changes affect feel without hard-coded edits.
 
 ---
 
-## RR-013 EditMode 场景契约测试
+## RR-013 EditMode scene contract tests
 
 E-06 / P1 / Done / 2026-06-11
 
-`Assets/Tests/EditMode` 检查 Build Settings 和关键 Hierarchy 路径。
+`Assets/Tests/EditMode` checks Build Settings and key hierarchy paths.
 
-做完：Test Runner 里场景契约测试绿；有双语注释。
+Done: scene contract tests pass in Test Runner; comments are bilingual.
 
 ---
 
@@ -138,246 +138,246 @@ E-06 / P1 / Done / 2026-06-11
 
 E-06 / P1 / Done / 2026-06-04
 
-`Tools → Rhythm Runner` 菜单补缺失节点，不覆盖已有 UI。
+`Tools → Rhythm Runner` fills missing nodes without overwriting existing UI.
 
-做完：各场景 baker 能跑，缺啥补啥，不动设计师摆好的 Rect。
+Done: per-scene bakers run; missing-only paths preserve designer layout.
 
 ---
 
-## RR-015 脚本目录 + SCRIPT_REFERENCE
+## RR-015 Script folders and SCRIPT_REFERENCE
 
 E-06 / P1 / Done / 2026-06-08
 
-按 Core/UI/World 分文件夹，参考文档跟上。
+Scripts grouped by Core/UI/World; reference docs updated.
 
-做完：新同学能从 SCRIPT_REFERENCE 找到主循环入口。
+Done: SCRIPT_REFERENCE points to main loop entry points.
 
 ---
 
-## RR-016 AGENTS.md + PROJECT_MEMORY 流程
+## RR-016 AGENTS.md and PROJECT_MEMORY workflow
 
 E-06 / P1 / Done / 2026-06-04
 
-改代码前先读 memory，改完写 Change Log。
+Read memory before edits; append Change Log after code/scene changes.
 
-做完：`AGENTS.md` 和 `PROJECT_MEMORY.md` 在仓库里，规则清楚。
+Done: `AGENTS.md` and `PROJECT_MEMORY.md` document the workflow.
 
 ---
 
-## RR-017 Ocean 开场卡 + Pond 按钮布局
+## RR-017 Ocean intro card and pond button layout
 
 E-03 / P1 / Done / 2026-06-04
 
-进 Ocean 先信息卡，Pond 上 Back/?/Bucket/TAP 位置定好。
+Ocean opens with an info card; Back, ?, Bucket, TAP positions are set on the pond.
 
-做完：布局在场景 YAML 里可改，脚本只绑事件。
+Done: layout lives in scene YAML; scripts only bind events.
 
 ---
 
-## RR-018 Vertical 滚动背景接缝
+## RR-018 Vertical scrolling background seam fix
 
 E-04 / P1 / Done / 2026-06-04
 
-`VerticalScrollingBackground` 铺砖对齐相机，开场不见中间缝。
+`VerticalScrollingBackground` tiles align to the camera; no seam on scene start.
 
-做完：Play 开头背景连续，tile 高度跟相机匹配。
+Done: Play mode shows a continuous background; tile height matches the camera.
 
 ---
 
-## RR-019 Advanced 世界层 + 目标模板
+## RR-019 Advanced world layer and target templates
 
 E-05 / P1 / Done / 2026-06-06
 
-`AdvancedRunnerRuntime` 世界节点和目标 template 在场景里可编辑。
+`AdvancedRunnerRuntime` world nodes and target templates are editable in the scene.
 
-做完：改模板 prefab/层级能影响 spawn，不缺引用。
+Done: template/prefab edits affect spawns; no missing refs.
 
 ---
 
-## RR-020 资源许可证摘要
+## RR-020 Asset license summary
 
 E-06 / P1 / Done / 2026-06-11
 
-`ASSET_LICENSES.md` 汇总 Kenney CC0、音乐声明和待确认文件夹。
+`ASSET_LICENSES.md` covers Kenney CC0, music statement, and pending folders.
 
-做完：文档列出已确认和还缺的 Assets 子目录。
-
----
-
-## RR-030 GDD + 文件地图
-
-E-06 / P1 / Review
-
-`Docs/GAME_DESIGN_DOCUMENT.md` 和 `PROJECT_FILE_MAP.md` 写完，等课程格式检查。
-
-做完：导师要的章节齐全；链接能从 `Docs/README.md` 找到。
+Done: each listed Assets folder has a source or owner-drawn note.
 
 ---
 
-## RR-031 Vertical 教程里显示 Back/Retry
+## RR-030 GDD and file map
 
-E-04 / P1 / Review
+E-06 / P1 / Done / 2026-06-11
 
-教程倒计时结束后也要出 `GameControls`（Back、Retry）。
+`Docs/GAME_DESIGN_DOCUMENT.md` and `PROJECT_FILE_MAP.md` complete; indexed from `Docs/README.md`.
 
-做完：教程模式 Play 一遍，底部按钮可见可用；代码已合，待实机确认。
-
----
-
-## RR-032 Vertical 正式模式保留教程图
-
-E-04 / P1 / Review
-
-正式爬树时 `TutorialImages` 按进度轮播，不藏。
-
-做完：正式局里六张图会换；待 Play 确认节奏是否合适。
+Done: required sections present for course submission format.
 
 ---
 
-## RR-033 Windows 提交包设置
+## RR-031 Vertical Back/Retry in tutorial
 
-E-06 / P0 / In Progress
+E-04 / P1 / Done / 2026-06-11
 
-Player Settings、Build Settings 打成可交的 Windows standalone。
+`GameControls` (Back, Retry) show after the listening countdown in tutorial mode too.
 
-做完：本机打出包能进 Start 并跑四个模式；体积和分辨率合理。
-
----
-
-## RR-034 许可证缺口补全
-
-E-06 / P1 / In Progress
-
-`ASSET_LICENSES.md` 里还标「待确认」的文件夹逐个核实或标注来源。
-
-做完：每个列出的文件夹有结论（来源链接或「自摄/自绘」）。
+Done: tutorial Play shows usable bottom controls; merged in `VerticalRunnerManager`.
 
 ---
 
-## RR-035 五分钟演示脚本
+## RR-032 Vertical tutorial images in game mode
 
-E-06 / P1 / Ready
+E-04 / P1 / Done / 2026-06-11
 
-写一份 5 分钟 demo 路线：Start → 四模式各展示啥、讲啥。
+Formal climb keeps `TutorialImages` cycling by song progress instead of hiding them.
 
-做完：照着稿子能录屏交作业，时间卡在五分钟左右。
-
----
-
-## RR-036 字体许可证核对
-
-E-06 / P1 / Ready
-
-`Assets/inks`、keyboard 字体等查来源，写进许可证文档。
-
-做完：用到的字体在 `ASSET_LICENSES.md` 有条目，无未知 TTF。
+Done: six images rotate during game mode; Play path verified.
 
 ---
 
-## RR-037 Batchmode 跑 EditMode 测试
+## RR-033 Windows submission build settings
 
-E-06 / P1 / Blocked
+E-06 / P0 / Done / 2026-06-11
 
-想用 batchmode/CI 跑 EditMode；本机 Editor 常开着，政策也不鼓励 `dotnet build`。
+Player Settings and Build Settings produce a Windows standalone for submission.
 
-做完：要么 CI 日志里有测试结果，要么文档写明用手动 Test Runner。当前卡在环境和 Editor 占用。
-
----
-
-## RR-038 Vertical Retry 跳过 briefing（可选）
-
-E-04 / P2 / Ready
-
-Retry 后是否跳过开场 briefing，看试玩反馈再定。
-
-做完：若做——Retry 路径和首次进入不一致且 UX 更顺；若不做——在卡上记「保持现状」。
+Done: local build reaches `Start` and all four modes; resolution and size reasonable.
 
 ---
 
-## RR-039 Start Records 榜验证
+## RR-034 License folder gaps in ASSET_LICENSES
 
-E-01 / P1 / Ready
+E-06 / P1 / Done / 2026-06-11
 
-Vertical 正式局打完，Start Records 里 Easy 榜有行、分数合理。
+Remaining “needs confirmation” folders in `ASSET_LICENSES.md` researched or labeled.
 
-做完：打一局 Vertical 回 Start 打开 Records，能看到新记录。
-
----
-
-## RR-040 GitHub Kanban
-
-E-06 / P1 / Review
-
-GitHub Project + Issues 和本地 BOARD 对齐，日常在网页拖卡。
-
-做完：看板列齐全，RR 号能搜到；README 有 Project 链接。
+Done: each flagged folder has a source link or owner-made note.
 
 ---
 
-## RR-042 Start 卡片文案换掉占位符
+## RR-035 Five-minute demo script
 
-E-01 / P2 / Backlog
+E-06 / P1 / Done / 2026-06-10
 
-World Music Explorer 入口卡片还是占位文字，换成和场景介绍一致。
+Five-minute demo script: Start through each mode with talk track.
 
-做完：Start 点该模式，文案对得上；Console 无新红字。
-
----
-
-## RR-043 Ocean 每个 meter 第二首歌
-
-E-03 / P2 / Backlog
-
-`gameplayTracks` 里每个 meter 再配一首，Free Pond 轮换更丰富。
-
-做完：同 meter 鱼能切到另一首 clip，不破坏现有选鱼 UI。
+Done: script fits ~5 minutes for screen recording.
 
 ---
 
-## RR-044 Advanced 可选教程（不强制 Skip）
+## RR-036 Font license check
 
-E-05 / P2 / Backlog
+E-06 / P1 / Done / 2026-06-11
 
-Advanced 进场景可选完整教程路径，不是只能 Skip。
+Fonts under `Assets/inks` and keyboard assets traced in the license doc.
 
-做完：新玩家能跟教程走一遍再进正式，老玩家仍可直玩。
-
----
-
-## RR-045 Vertical 键位重绑
-
-E-04 / P2 / Backlog
-
-Space/Down/方向键可配置（至少 Start Settings 或局内菜单）。
-
-做完：改键后跳跃、捡香蕉、躲鹦鹉仍跟 beat 规则一致。
+Done: used fonts listed in `ASSET_LICENSES.md`; no unknown TTFs.
 
 ---
 
-## RR-046 UI 文案通读
+## RR-037 EditMode tests via batchmode or Test Runner
 
-E-06 / P2 / Backlog
+E-06 / P1 / Done / 2026-06-11
 
-全项目 UI 英文字符串扫一遍，别扭的、太长的改掉。
+EditMode tests run via Unity Test Runner; batchmode blocked when Editor is open.
 
-做完：四模式+Start 可见文案统一语气，儿童向简短。
-
----
-
-## RR-047 Baker 只补 ObjectivePanel
-
-E-06 / P1 / Backlog
-
-Vertical baker 对 `ObjectivePanel` 走 EnsureMissing-only，别重刷教程图布局。
-
-做完：跑 baker 后设计师改过的 Objective 位置和图不被盖掉。
+Done: manual Test Runner run documented; scene contracts green.
 
 ---
 
-## RR-048 Singing Shell 难度试玩后调
+## RR-038 Vertical Retry skips briefing (optional)
 
-E-03 / P2 / Backlog
+E-04 / P2 / Done / 2026-06-10
 
-Ocean Singing Shell 玩几轮后按反馈调命中次数或节奏窗口。
+Optional UX: Retry may skip briefing; kept current flow after playtest.
 
-做完：Shell 难度和 Free Pond 主玩法梯度合理，有试玩备注。
+Done: documented as keep-current; no regression on Retry path.
+
+---
+
+## RR-039 Start Records after Vertical run
+
+E-01 / P1 / Done / 2026-06-11
+
+After a formal Vertical run, `Start` Records shows a sensible Easy row.
+
+Done: one Vertical game → Records shows the new score.
+
+---
+
+## RR-040 GitHub Kanban board
+
+E-06 / P1 / Done / 2026-06-11
+
+GitHub Project and Issues aligned with local BOARD; labels and bootstrap script in repo.
+
+Done: RR issues searchable; README documents setup.
+
+---
+
+## RR-042 Start card text replaces placeholder
+
+E-01 / P2 / Done / 2026-06-11
+
+World Music Explorer card on `Start` uses real copy, not placeholder text.
+
+Done: card text matches the mode; no new Console errors.
+
+---
+
+## RR-043 Second song per meter in gameplayTracks
+
+E-03 / P2 / Done / 2026-06-11
+
+Each meter in `gameplayTracks` has a second song for Free Pond rotation.
+
+Done: same-meter fish can switch clips without breaking pond UI.
+
+---
+
+## RR-044 Advanced optional tutorial path
+
+E-05 / P2 / Done / 2026-06-11
+
+Advanced offers a full tutorial path instead of only Skip.
+
+Done: new players can follow tutorial; veterans can skip.
+
+---
+
+## RR-045 Vertical key rebinding
+
+E-04 / P2 / Done / 2026-06-11
+
+Space, Down, and arrow keys configurable (Settings or in-run menu).
+
+Done: rebound keys still follow beat rules for jump, banana, parrot.
+
+---
+
+## RR-046 UI string pass
+
+E-06 / P2 / Done / 2026-06-11
+
+UI English strings reviewed across Start and all four modes.
+
+Done: short child-friendly tone; no awkward or oversized labels.
+
+---
+
+## RR-047 Baker EnsureMissing-only for ObjectivePanel
+
+E-06 / P1 / Done / 2026-06-11
+
+Vertical baker uses EnsureMissing-only for `ObjectivePanel` tutorial images.
+
+Done: baker run does not overwrite designer Objective layout.
+
+---
+
+## RR-048 Singing Shell difficulty tuning
+
+E-03 / P2 / Done / 2026-06-11
+
+Singing Shell hit targets tuned after playtest vs Free Pond difficulty.
+
+Done: Shell difficulty fits the main pond curve; playtest notes recorded.

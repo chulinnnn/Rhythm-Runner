@@ -20,6 +20,7 @@ public class RhythmManager : MonoBehaviour
     public string fallbackMusicObjectName = "126bpm";
     public float bpm = 126f;
     public float firstBeatOffset = 0f;
+    public float musicVolumeBase = 0.85f;
     public bool useLevelTimeWhenMusicMissing = false;
     public float levelTimeFallbackStart = 0f;
 
@@ -132,6 +133,17 @@ public class RhythmManager : MonoBehaviour
         UpdateResultVisuals();
         UpdateVisualization();
         UpdateTimingDebugText();
+        ApplyMusicVolumeToSource();
+    }
+
+    private void ApplyMusicVolumeToSource()
+    {
+        if (musicSource == null)
+        {
+            return;
+        }
+
+        StartMenuAudioSettings.ApplyMusicVolume(musicSource, musicVolumeBase);
     }
 
     public RhythmTimingResult JudgeInput()

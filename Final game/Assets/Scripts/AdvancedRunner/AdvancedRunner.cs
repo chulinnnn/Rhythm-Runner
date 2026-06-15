@@ -1534,6 +1534,10 @@ public partial class AdvancedRunnerManager
         StopRhythmClock();
         ui.UpdateControlRhythmPrompt(false, false, false, false, false);
         ui.ShowResult(completed, score, perfectCount, goodCount, missCount, maxCombo);
+        if (score > 0)
+        {
+            LeaderboardManager.SaveScore(LeaderboardMode.Hard, score);
+        }
     }
 
     private bool InputIsAllowed()
@@ -1579,6 +1583,11 @@ public partial class AdvancedRunnerManager
     {
         ControlPromptState state = new ControlPromptState();
         if (runEnded || waitingForStart)
+        {
+            return state;
+        }
+
+        if (!StartMenuAudioSettings.BeatPromptsEnabled)
         {
             return state;
         }
