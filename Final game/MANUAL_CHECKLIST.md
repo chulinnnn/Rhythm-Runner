@@ -10,7 +10,7 @@ Items **you** must complete that cannot be fully automated. All notes should be 
 - [ ] **Verify GitHub Project** — open [Rhythm Runner M8](https://github.com/users/chulinnnn/projects); confirm Issues/cards in Done (see Kanban README if bootstrap ran)
 - [ ] **Font / asset licences** — verify or replace fonts in `Assets/inks`, `Assets/keyboard`; update [`ASSET_LICENSES.md`](Assets/AssetLicenses/ASSET_LICENSES.md) and [`Docs/CREDITS.md`](Docs/CREDITS.md)
 - [ ] **Fill name** in [`Docs/CREDITS.md`](Docs/CREDITS.md) _(your name)_ placeholder
-- [ ] **Submission form** — GitHub URL, final commit hash from [`Docs/COMMITS.md`](Docs/COMMITS.md), paste AI/assets summary from [`Docs/AI_USAGE.md`](Docs/AI_USAGE.md)
+- [ ] **Submission form** — GitHub URL, final commit hash from `git rev-parse --short HEAD`, paste AI/assets summary from [`Docs/AI_USAGE.md`](Docs/AI_USAGE.md)
 
 ## Optional but recommended
 
