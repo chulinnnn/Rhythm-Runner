@@ -3,7 +3,7 @@
 Curated commits for **Rhythm Playground** capstone work. Full history: `git log` in repo root.
 
 **Repository:** https://github.com/chulinnnn/Rhythm-Runner  
-**Latest push hash:** _(updated after push — see header after remediation commit)_
+**Latest push hash:** `8753910` (2026-06-15 — submission evidence pack)
 
 | Date | Hash | Original message | Impact (English summary) |
 |------|------|------------------|--------------------------|
@@ -24,7 +24,7 @@ Curated commits for **Rhythm Playground** capstone work. Full history: `git log`
 | 2026-06-11 | `6e4cc90` | 清理start | Start menu cleanup |
 | 2026-06-11 | _(docs commit)_ | GDD + ASSET_LICENSES + EditMode tests | Design doc package and automated scene checks |
 | 2026-06-15 | `33da0f6` | Kanban bootstrap | GitHub Issues/workflows for planning evidence |
-| 2026-06-15 | `958b8fc` | Kanban README | Project board setup documentation |
+| 2026-06-15 | `8753910` | docs: submission evidence pack | English evidence docs, README fixes, Kanban config, manual checklist |
 
 ## How to cite in reports
 
