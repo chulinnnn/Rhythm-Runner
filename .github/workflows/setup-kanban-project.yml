@@ -1,0 +1,86 @@
+name: Setup Kanban project
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  projects: write
+
+env:
+  PROJECT_OWNER: chulinnnn
+  PROJECT_TITLE: Rhythm Runner M8
+  REPO: chulinnnn/Rhythm-Runner
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create or find project
+        id: project
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          EXISTING=$(gh project list --owner "$PROJECT_OWNER" --format json | jq -r --arg t "$PROJECT_TITLE" '.projects[]? | select(.title == $t) | .number' | head -n1)
+          if [ -n "$EXISTING" ]; then
+            echo "Found project #$EXISTING"
+            NUM="$EXISTING"
+          else
+            CREATED=$(gh project create --owner "$PROJECT_OWNER" --title "$PROJECT_TITLE" --format json)
+            NUM=$(echo "$CREATED" | jq -r '.number')
+            echo "Created project #$NUM"
+          fi
+          gh project link --owner "$PROJECT_OWNER" --number "$NUM" --repo "$REPO"
+          echo "number=$NUM" >> "$GITHUB_OUTPUT"
+          gh project view "$NUM" --owner "$PROJECT_OWNER" --format json | jq -r '.url' >> project_url.txt
+
+      - name: Add kanban issues to project
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          NUM="${{ steps.project.outputs.number }}"
+          PROJECT_JSON=$(gh project view "$NUM" --owner "$PROJECT_OWNER" --format json)
+          PROJECT_ID=$(echo "$PROJECT_JSON" | jq -r '.id')
+          FIELDS=$(gh project field-list "$NUM" --owner "$PROJECT_OWNER" --format json)
+          STATUS_FIELD_ID=$(echo "$FIELDS" | jq -r '.fields[] | select(.name == "Status") | .id')
+
+          pick_status() {
+            local want="$1"
+            case "$want" in
+              Backlog) echo "$FIELDS" | jq -r '.fields[] | select(.name=="Status") | .options[] | select(.name=="Backlog" or .name=="Todo") | .id' | head -n1 ;;
+              Ready) echo "$FIELDS" | jq -r '.fields[] | select(.name=="Status") | .options[] | select(.name=="Ready" or .name=="Todo") | .id' | head -n1 ;;
+              "In Progress") echo "$FIELDS" | jq -r '.fields[] | select(.name=="Status") | .options[] | select(.name=="In Progress") | .id' | head -n1 ;;
+              Review) echo "$FIELDS" | jq -r '.fields[] | select(.name=="Status") | .options[] | select(.name=="Review" or .name=="In Progress") | .id' | head -n1 ;;
+              Done) echo "$FIELDS" | jq -r '.fields[] | select(.name=="Status") | .options[] | select(.name=="Done") | .id' | head -n1 ;;
+              Blocked) echo "$FIELDS" | jq -r '.fields[] | select(.name=="Status") | .options[] | select(.name=="Blocked" or .name=="Todo") | .id' | head -n1 ;;
+              *) echo "" ;;
+            esac
+          }
+
+          gh issue list --repo "$REPO" --label kanban --state all --limit 200 --json number,title,state,url | jq -c '.[]' | while read -r row; do
+            URL=$(echo "$row" | jq -r '.url')
+            TITLE=$(echo "$row" | jq -r '.title')
+            STATE=$(echo "$row" | jq -r '.state')
+            COL="Backlog"
+            if echo "$TITLE" | grep -q '^RR-037'; then COL="Blocked"
+            elif [ "$STATE" = "CLOSED" ]; then COL="Done"
+            elif echo "$TITLE" | grep -qE '^RR-(030|031|032|040)'; then COL="Review"
+            elif echo "$TITLE" | grep -qE '^RR-(033|034)'; then COL="In Progress"
+            elif echo "$TITLE" | grep -qE '^RR-(035|036|038|039)'; then COL="Ready"
+            elif echo "$TITLE" | grep -qE '^RR-(042|043|044|045|046|047|048)'; then COL="Backlog"
+            fi
+            ITEM=$(gh project item-add "$NUM" --owner "$PROJECT_OWNER" --url "$URL" --format json)
+            ITEM_ID=$(echo "$ITEM" | jq -r '.id')
+            OPT=$(pick_status "$COL")
+            if [ -n "$STATUS_FIELD_ID" ] && [ -n "$OPT" ]; then
+              gh project item-edit --id "$ITEM_ID" --project-id "$PROJECT_ID" \
+                --field-id "$STATUS_FIELD_ID" --single-select-option-id "$OPT" || true
+            fi
+            echo "$TITLE -> $COL"
+          done
+
+      - name: Show project URL
+        run: cat project_url.txt

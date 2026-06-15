@@ -1,0 +1,48 @@
+name: Add issue to Kanban project
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+  projects: write
+
+env:
+  PROJECT_OWNER: chulinnnn
+  PROJECT_NUMBER: "1"
+  REPO: chulinnnn/Rhythm-Runner
+
+jobs:
+  add-to-project:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add issue to project and set Backlog
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          # Skip bootstrap cards that already have project items
+          if gh issue view "${{ github.event.issue.number }}" --repo "$REPO" --json labels --jq '.labels[].name' | grep -qx 'kanban'; then
+            echo "Kanban card — may already be on board; still adding if missing."
+          fi
+
+          if ! gh project view "$PROJECT_NUMBER" --owner "$PROJECT_OWNER" --format json > /dev/null 2>&1; then
+            echo "Project $PROJECT_NUMBER not found or token lacks project scope. Skipping."
+            exit 0
+          fi
+
+          ITEM_JSON=$(gh project item-add "$PROJECT_NUMBER" --owner "$PROJECT_OWNER" --url "${{ github.event.issue.html_url }}" --format json)
+          ITEM_ID=$(echo "$ITEM_JSON" | jq -r '.id')
+          PROJECT_ID=$(gh project view "$PROJECT_NUMBER" --owner "$PROJECT_OWNER" --format json | jq -r '.id')
+
+          FIELDS=$(gh project field-list "$PROJECT_NUMBER" --owner "$PROJECT_OWNER" --format json)
+          STATUS_FIELD_ID=$(echo "$FIELDS" | jq -r '.fields[] | select(.name == "Status") | .id')
+          BACKLOG_ID=$(echo "$FIELDS" | jq -r '.fields[] | select(.name == "Status") | .options[] | select(.name == "Backlog" or .name == "Todo") | .id' | head -n1)
+
+          if [ -n "$STATUS_FIELD_ID" ] && [ -n "$BACKLOG_ID" ]; then
+            gh project item-edit --id "$ITEM_ID" --project-id "$PROJECT_ID" \
+              --field-id "$STATUS_FIELD_ID" --single-select-option-id "$BACKLOG_ID"
+          fi
