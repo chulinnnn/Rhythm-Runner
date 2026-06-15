@@ -7,7 +7,6 @@ on:
 permissions:
   contents: read
   issues: write
-  projects: write
 
 env:
   PROJECT_OWNER: chulinnnn
@@ -20,13 +19,13 @@ jobs:
     steps:
       - name: Add issue to project and set Backlog
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PROJECT_SETUP_TOKEN }}
         run: |
           set -euo pipefail
 
-          # Skip bootstrap cards that already have project items
-          if gh issue view "${{ github.event.issue.number }}" --repo "$REPO" --json labels --jq '.labels[].name' | grep -qx 'kanban'; then
-            echo "Kanban card — may already be on board; still adding if missing."
+          if [ -z "$GH_TOKEN" ]; then
+            echo "No PROJECT_SETUP_TOKEN — skip auto-add. New issues stay on Issues tab only."
+            exit 0
           fi
 
           if ! gh project view "$PROJECT_NUMBER" --owner "$PROJECT_OWNER" --format json > /dev/null 2>&1; then

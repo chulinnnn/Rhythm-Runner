@@ -1,12 +1,14 @@
 name: Setup Kanban project
 
+# Needs a PAT with project + read:project in repo secret PROJECT_SETUP_TOKEN.
+# GITHUB_TOKEN cannot create user Projects v2. After adding the secret, run manually from Actions tab.
+
 on:
   workflow_dispatch:
 
 permissions:
   contents: read
   issues: write
-  projects: write
 
 env:
   PROJECT_OWNER: chulinnnn
@@ -17,28 +19,35 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     steps:
+      - name: Check token
+        run: |
+          if [ -z "${{ secrets.PROJECT_SETUP_TOKEN }}" ]; then
+            echo "Add repo secret PROJECT_SETUP_TOKEN (gh PAT with project + read:project), then re-run."
+            echo "Or locally: gh auth refresh -h github.com -s project,read:project"
+            echo "Then: Final game/scripts/bootstrap-github-kanban.ps1 -SetupProjectOnly"
+            exit 1
+          fi
+
       - name: Create or find project
         id: project
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PROJECT_SETUP_TOKEN }}
         run: |
           set -euo pipefail
           EXISTING=$(gh project list --owner "$PROJECT_OWNER" --format json | jq -r --arg t "$PROJECT_TITLE" '.projects[]? | select(.title == $t) | .number' | head -n1)
           if [ -n "$EXISTING" ]; then
-            echo "Found project #$EXISTING"
             NUM="$EXISTING"
           else
             CREATED=$(gh project create --owner "$PROJECT_OWNER" --title "$PROJECT_TITLE" --format json)
             NUM=$(echo "$CREATED" | jq -r '.number')
-            echo "Created project #$NUM"
           fi
           gh project link --owner "$PROJECT_OWNER" --number "$NUM" --repo "$REPO"
           echo "number=$NUM" >> "$GITHUB_OUTPUT"
-          gh project view "$NUM" --owner "$PROJECT_OWNER" --format json | jq -r '.url' >> project_url.txt
+          gh project view "$NUM" --owner "$PROJECT_OWNER" --format json | jq -r '.url' | tee project_url.txt
 
       - name: Add kanban issues to project
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PROJECT_SETUP_TOKEN }}
         run: |
           set -euo pipefail
           NUM="${{ steps.project.outputs.number }}"
@@ -81,6 +90,3 @@ jobs:
             fi
             echo "$TITLE -> $COL"
           done
-
-      - name: Show project URL
-        run: cat project_url.txt
