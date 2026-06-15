@@ -5,21 +5,21 @@
 ## GitHub
 
 - Issues（RR 号搜）：https://github.com/chulinnnn/Rhythm-Runner/issues?q=label%3Akanban
-- Project 看板：推完代码后去 Actions 跑 **Setup Kanban project**，跑完终端里会印 Project URL；或本地有 `project` 权限时：
+Project 看板（二选一）：
 
-```powershell
-cd "Final game\scripts"
-.\bootstrap-github-kanban.ps1 -SetupProjectOnly
-.\bootstrap-github-kanban.ps1
-```
+1. **本地 gh**（推荐，拖卡 + 脚本自动摆列）  
+   ```powershell
+   gh auth refresh -h github.com -s project,read:project
+   cd "Final game\scripts"
+   .\bootstrap-github-kanban.ps1 -SetupProjectOnly
+   .\bootstrap-github-kanban.ps1
+   ```  
+   跑完 `Docs/Kanban/kanban-config.json` 里会有 project 号和 URL。
 
-本地 `gh` 若缺 `read:project`，先：
+2. **网页手动**  
+   [你的 Projects](https://github.com/users/chulinnnn/projects) → New project → Board → 标题 `Rhythm Runner M8` → 关联本仓库 → Add items 搜 `label:kanban` → Status 列改成和 BOARD 一致（可把 Todo 当 Backlog）。
 
-```powershell
-gh auth refresh -h github.com -s project,read:project
-```
-
-Project 的 Status 列建议改成：`Backlog`、`Ready`、`In Progress`、`Review`、`Done`、`Blocked`（和 BOARD 一致；默认 Todo 可当 Backlog 用）。
+Actions 里的 **Setup Kanban project** 需要仓库 Secret `PROJECT_SETUP_TOKEN`（PAT 带 `project` 权限），`GITHUB_TOKEN` 建不了用户 Project。
 
 ## 本地文件
 
