@@ -25,7 +25,7 @@ Curated commits for **Rhythm Playground** capstone work. Full history: `git log`
 | 2026-06-11 | _(local)_ | GDD + ASSET_LICENSES + EditMode tests | Design doc and automated scene checks |
 | 2026-06-15 | `33da0f6` | Kanban bootstrap | GitHub Issues for planning |
 | 2026-06-15 | `8753910` | docs: portfolio documentation | English docs and README structure |
-| 2026-06-16 | _(final push)_ | docs: submission polish | Screenshots, licences, testing log — use your HEAD hash |
+| 2026-06-16 | `e5da6ae` | docs: portfolio polish, screenshots, and cleanup | Screenshots, doc polish, internal file cleanup; large wav excluded |
 
 ## How to cite in reports
 
