@@ -36,6 +36,12 @@ Thumbs.db
 **/*.dll
 !**/Plugins/**/*.dll
 
+# Capstone build output and scratch folders (local only)
+Final game/Build/
+Final game/tmp/
+Final game/Tools/
+Final game/Docs/GAME_CONCEPT_DOCX_REVISION_NOTES.md
+
 # Large audio — keep locally for Unity; do not push to GitHub (>100MB limit)
 Final game/Assets/ocean_music/60bpm-68.wav
 Final game/report_en_extract.txt

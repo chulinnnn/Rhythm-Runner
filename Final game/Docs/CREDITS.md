@@ -20,7 +20,7 @@ Attribution for **Rhythm Playground**. Full legal detail: [`Assets/AssetLicenses
 
 | Source | Use | Licence |
 |--------|-----|---------|
-| **Project music folders** (`globalmusic`, `ocean_music`, `monkeymusic`, `inkmusic`, etc.) | Mode BGM and teaching tracks | Declared **CC0** by project author — see ASSET_LICENSES |
+| **freesound.org** (CC0 downloads) | Mode BGM in `globalmusic`, `ocean_music`, `monkeymusic`, `inkmusic`, etc. | **CC0** — see ASSET_LICENSES and AI_USAGE |
 | **Kenney UI pack** | UI sounds (where used) | CC0 via UI pack licence file |
 
 ## Third-party engines and tools

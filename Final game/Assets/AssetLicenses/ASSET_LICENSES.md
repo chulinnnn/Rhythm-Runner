@@ -24,7 +24,7 @@ These entries are recorded from the project owner's statement in this thread.
 
 | Asset area | Declared license / ownership | Notes |
 | --- | --- | --- |
-| Music assets | CC0, usable in this project | The project owner stated that all music assets are CC0. This includes audio in `Assets/globalmusic`, `Assets/inkmusic`, `Assets/monkeymusic`, `Assets/music`, `Assets/ocean_music`, `Assets/Resources/jinbi.mp3`, `Assets/Resources/shibai.mp3`, and root audio files such as `Assets/DM_20260520232108_001.mp3` and `Assets/DM_20260520232113_001.mp3`. |
+| Music assets | CC0, usable in this project | Mode BGM downloaded from https://freesound.org/ (CC0) into `Assets/globalmusic`, `Assets/inkmusic`, `Assets/monkeymusic`, `Assets/music`, and `Assets/ocean_music`, with the project author's CC0 declaration for this submission. Also includes `Assets/Resources/jinbi.mp3`, `Assets/Resources/shibai.mp3`, and root audio files such as `Assets/DM_20260520232108_001.mp3` and `Assets/DM_20260520232113_001.mp3`. The file `Assets/ocean_music/60bpm-68.wav` is kept locally only (GitHub size limit). |
 | Background photos | Owned by project owner | The project owner stated that some background images were personally photographed. Keep original source files or notes if available. |
 | Hand-drawn background art | Owned by project owner | The project owner stated that some background images were personally drawn. Keep source PSD/Procreate/Krita files or notes if available. |
 | Ink mode fonts and UI art | CC0, usable in this project | `Assets/inks` — declared CC0 by project owner (2026-06-16). |

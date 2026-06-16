@@ -3,7 +3,7 @@
 Curated commits for **Rhythm Playground** capstone work. Full history: `git log` from repository root.
 
 **Repository:** https://github.com/chulinnnn/Rhythm-Runner  
-**Latest commit on `main`:** run `git rev-parse --short HEAD` after your final push.
+**Latest commit on `main`:** see the final row in the table below.
 
 | Date | Hash | Original message | Impact |
 |------|------|------------------|--------|
@@ -26,6 +26,7 @@ Curated commits for **Rhythm Playground** capstone work. Full history: `git log`
 | 2026-06-15 | `33da0f6` | Kanban bootstrap | GitHub Issues for planning |
 | 2026-06-15 | `8753910` | docs: portfolio documentation | English docs and README structure |
 | 2026-06-16 | `e5da6ae` | docs: portfolio polish, screenshots, and cleanup | Screenshots, doc polish, internal file cleanup; large wav excluded |
+| 2026-06-16 | — | docs: sync GDD, licences, and gitignore | GDD M6–M8 complete; freesound source; remove tmp from repo; ignore Build/ |
 
 ## How to cite in reports
 

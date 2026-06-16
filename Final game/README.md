@@ -21,6 +21,8 @@ Entry scene: **`Assets/Scenes/Start.unity`**. Each mode card loads its scene; Ba
 
 Recommended: **Unity 2022.3.x LTS**, 2D Core template.
 
+Windows standalone build output lives in `Build/windows/` locally; that folder is gitignored and is **not** on GitHub. Submit the course build zip separately.
+
 ## Controls (summary)
 
 | Mode | Input |

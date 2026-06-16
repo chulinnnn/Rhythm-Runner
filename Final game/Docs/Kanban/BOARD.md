@@ -23,7 +23,7 @@ All M8 cards closed. WIP: **0 / 3** · Review: **0 / 4**
 | RR-013 | EditMode scene contract tests | E-06 | 2026-06-11 |
 | RR-014 | Hierarchy Bakers (`Tools → Rhythm Runner`) | E-06 | 2026-06-04 |
 | RR-015 | Script folder layout + SCRIPT_REFERENCE | E-06 | 2026-06-08 |
-| RR-016 | `AGENTS.md` + `PROJECT_MEMORY` workflow | E-06 | 2026-06-04 |
+| RR-016 | Development log + `PROJECT_MEMORY` workflow | E-06 | 2026-06-04 |
 | RR-017 | Ocean intro card + pond button layout | E-03 | 2026-06-04 |
 | RR-018 | Vertical scrolling background seam fix | E-04 | 2026-06-04 |
 | RR-019 | Advanced hierarchy world + target templates | E-05 | 2026-06-06 |

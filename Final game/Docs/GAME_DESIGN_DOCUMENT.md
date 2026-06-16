@@ -2,8 +2,8 @@
 
 **Project:** Rhythm Runner (`Final game`)  
 **Document version:** 1.0  
-**Last updated:** 2026-06-11  
-**Status:** In development (vertical slice playable across multiple modes)
+**Last updated:** 2026-06-16  
+**Status:** Submission vertical slice complete (four modes playable from Start)
 
 ---
 
@@ -346,15 +346,15 @@ Detailed script index: `SCRIPT_REFERENCE.md` / `SCRIPT_REFERENCE_ZH.md`.
 
 | Milestone | Deliverable | Status |
 |-----------|-------------|--------|
-| **M0 — Repo & archive** | Project structure, bunny legacy isolated, `AGENTS.md` | Done |
+| **M0 — Repo & archive** | Project structure, bunny legacy isolated, `PROJECT_MEMORY.md` | Done |
 | **M1 — Scene map** | Start + 4 modes in Build Settings | Done |
 | **M2 — Ocean slice** | Free Pond, Bucket, track repository | Done |
 | **M3 — Vertical slice** | Tutorial + game unified scene, spawner, miss HUD | Done |
 | **M4 — Advanced slice** | Chart table, lanes, result flow | Done |
 | **M5 — Shared rhythm & UI rules** | RhythmManager, hierarchy UI policy, Bakers | Done |
-| **M6 — Polish** | Beat assist, Inspector tuning, tutorial images in game, Back/Retry | In progress |
-| **M7 — Quality** | EditMode tests, license doc, design doc (`Docs/`) | In progress |
-| **M8 — Submission** | Playable build, GDD, demo script, known issues list | Planned |
+| **M6 — Polish** | Beat assist, Inspector tuning, tutorial images in game, Back/Retry | Complete |
+| **M7 — Quality** | EditMode tests, license doc, design doc (`Docs/`) | Complete |
+| **M8 — Submission** | Playable build, GDD, demo script, known issues list | Complete |
 
 ### Weekly focus (template)
 

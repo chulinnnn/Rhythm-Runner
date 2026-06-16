@@ -154,13 +154,13 @@ Done: SCRIPT_REFERENCE points to main loop entry points.
 
 ---
 
-## RR-016 AGENTS.md and PROJECT_MEMORY workflow
+## RR-016 Development log and PROJECT_MEMORY workflow
 
 E-06 / P1 / Done / 2026-06-04
 
 Read memory before edits; append Change Log after code/scene changes.
 
-Done: `AGENTS.md` and `PROJECT_MEMORY.md` document the workflow.
+Done: `PROJECT_MEMORY.md` documents the workflow.
 
 ---
 

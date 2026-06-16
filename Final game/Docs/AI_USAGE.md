@@ -27,8 +27,8 @@ Declaration for **Rhythm Playground** (`Final game`). I used AI only as a helper
 |-------|--------|
 | **Name** | Mode BGM folders + hand-made / photographed backgrounds |
 | **Type** | audio / image |
-| **Source** | Author-owned files under `Assets/globalmusic`, `ocean_music`, `monkeymusic`, `inkmusic`, etc. |
-| **Licence** | CC0 declared by author (course submission) |
+| **Source** | https://freesound.org/ (CC0 downloads) stored under `Assets/globalmusic`, `ocean_music`, `monkeymusic`, `inkmusic`, etc. |
+| **Licence** | CC0 from freesound.org; project author CC0 declaration in ASSET_LICENSES and Appendix B |
 | **What it provided** | BGM per mode; some custom backgrounds |
 | **Used unchanged** | Clips assigned to AudioSource in scenes |
 | **Modified** | Trimmed levels in Unity where needed |
