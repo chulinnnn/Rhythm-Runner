@@ -1759,6 +1759,32 @@ public static class AllSceneHierarchyBaker
         EnsureSettingRow(content.transform, "MasterVolumeRow", "Master Volume", true);
         EnsureSettingRow(content.transform, "MusicVolumeRow", "Music Volume", true);
         EnsureBeatPromptsRow(content.transform);
+        ReconfigureSettingsSliders(content.transform);
+        StartMenuAudioSettings.PrepareSettingsContent(content.transform);
+    }
+
+    private static void ReconfigureSettingsSliders(Transform content)
+    {
+        foreach (string rowName in new[] { "MasterVolumeRow", "MusicVolumeRow" })
+        {
+            Transform row = content.Find(rowName);
+            if (row == null)
+            {
+                continue;
+            }
+
+            Transform sliderTransform = row.Find("Slider");
+            Slider slider = sliderTransform != null ? sliderTransform.GetComponent<Slider>() : null;
+            if (slider == null)
+            {
+                continue;
+            }
+
+            Transform fillArea = sliderTransform.Find("FillArea");
+            Transform fill = fillArea != null ? fillArea.Find("Fill") : null;
+            Transform handle = sliderTransform.Find("Handle");
+            ConfigureSettingsSliderHierarchy(slider, fillArea, fill, handle);
+        }
     }
 
     private static void EnsureBeatPromptsRow(Transform parent)
@@ -1845,12 +1871,74 @@ public static class AllSceneHierarchyBaker
         if (slider)
         {
             GameObject sliderObj = EnsureMissingPanel(row.transform, "Slider", new Vector2(0.68f, 0.5f), Vector2.zero, new Vector2(420f, 40f), new Color(1f, 1f, 1f, 0.25f));
-            if (sliderObj.GetComponent<Slider>() == null)
+            Slider sliderComponent = sliderObj.GetComponent<Slider>();
+            if (sliderComponent == null)
             {
-                sliderObj.AddComponent<Slider>();
+                sliderComponent = sliderObj.AddComponent<Slider>();
             }
-            EnsureMissingRect(sliderObj.transform, "FillArea", Vector2.zero, Vector2.zero, new Vector2(400f, 30f));
-            EnsureMissingImage(EnsureMissingRect(sliderObj.transform, "Handle", new Vector2(0f, 0.5f), Vector2.zero, new Vector2(32f, 48f)), Color.white);
+
+            GameObject fillArea = EnsureMissingRect(sliderObj.transform, "FillArea", Vector2.zero, Vector2.zero, new Vector2(400f, 30f));
+            GameObject fill = EnsureMissingPanel(fillArea.transform, "Fill", Vector2.zero, Vector2.zero, new Vector2(400f, 30f), new Color(1f, 1f, 1f, 0.55f));
+            GameObject handle = EnsureMissingRect(sliderObj.transform, "Handle", new Vector2(0f, 0.5f), Vector2.zero, new Vector2(32f, 48f));
+            EnsureMissingImage(handle, Color.white);
+            ConfigureSettingsSliderHierarchy(sliderComponent, fillArea.transform, fill.transform, handle.transform);
+        }
+    }
+
+    private static void ConfigureSettingsSliderHierarchy(Slider slider, Transform fillArea, Transform fill, Transform handle)
+    {
+        if (slider == null)
+        {
+            return;
+        }
+
+        if (fillArea != null)
+        {
+            RectTransform fillAreaRect = fillArea as RectTransform;
+            fillAreaRect.anchorMin = new Vector2(0f, 0.25f);
+            fillAreaRect.anchorMax = new Vector2(1f, 0.75f);
+            fillAreaRect.anchoredPosition = Vector2.zero;
+            fillAreaRect.sizeDelta = Vector2.zero;
+        }
+
+        if (fill != null)
+        {
+            RectTransform fillRect = fill as RectTransform;
+            fillRect.anchorMin = Vector2.zero;
+            fillRect.anchorMax = Vector2.one;
+            fillRect.anchoredPosition = Vector2.zero;
+            fillRect.sizeDelta = Vector2.zero;
+            slider.fillRect = fillRect;
+        }
+
+        if (handle != null)
+        {
+            slider.handleRect = handle as RectTransform;
+            Image handleImage = handle.GetComponent<Image>();
+            if (handleImage != null)
+            {
+                handleImage.raycastTarget = true;
+                slider.targetGraphic = handleImage;
+            }
+        }
+
+        Image backgroundImage = slider.GetComponent<Image>();
+        if (backgroundImage != null)
+        {
+            backgroundImage.raycastTarget = true;
+            if (slider.targetGraphic == null)
+            {
+                slider.targetGraphic = backgroundImage;
+            }
+        }
+
+        slider.minValue = 0f;
+        slider.maxValue = 1f;
+        slider.wholeNumbers = false;
+        slider.value = Mathf.Max(slider.value, 0.01f);
+        if (slider.value <= 0f)
+        {
+            slider.value = 0.85f;
         }
     }
 

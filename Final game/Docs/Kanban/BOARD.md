@@ -18,7 +18,7 @@ All M8 cards closed. WIP: **0 / 3** · Review: **0 / 4**
 | RR-008 | Vertical miss counter (no heart death) | E-04 | 2026-06-05 |
 | RR-009 | Advanced unified scene + chart table | E-05 | 2026-06-05 |
 | RR-010 | Advanced dual beat clock (visual delay) | E-05 | 2026-06-07 |
-| RR-011 | Start beat-assist toggle → runner prompts | E-01 | 2026-06-10 |
+| RR-011 | Four-column rhythm prompts (Vertical + Advanced) | E-01 | 2026-06-10 |
 | RR-012 | Inspector tuning — Vertical/Advanced settings | E-04/E-05 | 2026-06-11 |
 | RR-013 | EditMode scene contract tests | E-06 | 2026-06-11 |
 | RR-014 | Hierarchy Bakers (`Tools → Rhythm Runner`) | E-06 | 2026-06-04 |

@@ -31,11 +31,11 @@ Historical early spec (superseded): [`2Dinclass/Rhythm Runner Design.md`](2Dincl
 
 ---
 
-## Submission evidence (GitHub portfolio)
+## Portfolio documentation
 
-All twelve required evidence types are indexed here:
+Documentation for the module portfolio is indexed here:
 
-**[`Final game/Docs/README.md`](Final%20game/Docs/README.md)** — development log, commits, feedback, testing, screenshots folder, planning/Kanban, assets, AI, credits, reflection, limitations.
+**[`Final game/Docs/README.md`](Final%20game/Docs/README.md)** — development log, commits, feedback, testing, screenshots, Kanban, assets, AI declaration, credits, reflection, limitations.
 
 ---
 
@@ -62,5 +62,5 @@ Do not commit `Library/`, `Temp/`, or `.exe` files under Assets.
 ## Links
 
 - [Capstone README](Final%20game/README.md)
-- [Evidence index](Final%20game/Docs/README.md)
+- [Documentation index](Final%20game/Docs/README.md)
 - [Kanban board snapshot](Final%20game/Docs/Kanban/BOARD.md)

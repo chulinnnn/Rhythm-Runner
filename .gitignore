@@ -35,3 +35,7 @@ Thumbs.db
 **/*.exe
 **/*.dll
 !**/Plugins/**/*.dll
+
+# Large audio — keep locally for Unity; do not push to GitHub (>100MB limit)
+Final game/Assets/ocean_music/60bpm-68.wav
+Final game/report_en_extract.txt

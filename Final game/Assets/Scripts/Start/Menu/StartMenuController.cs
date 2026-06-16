@@ -146,6 +146,11 @@ public class StartMenuController : MonoBehaviour
                 PlayerPrefs.Save();
             });
         BindBeatPromptsToggle(existing.transform);
+        Transform settingsContent = existing.transform.Find("Root/SettingsPanel/Card/SettingsContent");
+        if (settingsContent != null)
+        {
+            StartMenuAudioSettings.PrepareSettingsContent(settingsContent);
+        }
         EnsureMusicDecorations(existing.transform);
 
         aboutPanel.SetActive(false);
@@ -203,12 +208,14 @@ public class StartMenuController : MonoBehaviour
 
     private void ApplyMenuMusicVolume()
     {
+        AudioSource source = ResolveMenuMusicSource();
+        StartMenuAudioSettings.ApplyMusicVolume(source, 0.85f);
+    }
+
+    private static AudioSource ResolveMenuMusicSource()
+    {
         GameObject menuMusic = GameObject.Find("menuMusic");
-        if (menuMusic != null)
-        {
-            AudioSource source = menuMusic.GetComponent<AudioSource>();
-            StartMenuAudioSettings.ApplyMusicVolume(source, 0.85f);
-        }
+        return menuMusic != null ? menuMusic.GetComponent<AudioSource>() : null;
     }
 
     private void EnsureMusicDecorations(Transform menuRoot)
@@ -276,15 +283,28 @@ public class StartMenuController : MonoBehaviour
     private void BindSlider(Transform root, string path, string key, UnityEngine.Events.UnityAction<float> onChanged)
     {
         Transform child = root.Find(path);
-        Slider slider = child != null ? child.GetComponent<Slider>() : null;
-        if (slider == null)
+        if (child == null)
         {
+            Debug.LogWarning("StartMenuController: Missing transform at " + path);
             return;
         }
 
-        slider.SetValueWithoutNotify(PlayerPrefs.GetFloat(key, slider.value));
+        Slider slider = child.GetComponent<Slider>();
+        if (slider == null)
+        {
+            slider = child.GetComponentInChildren<Slider>(true);
+        }
+        if (slider == null)
+        {
+            slider = child.gameObject.AddComponent<Slider>();
+        }
+
+        StartMenuAudioSettings.ConfigureSettingsSlider(slider);
+        float savedValue = PlayerPrefs.GetFloat(key, 0.85f);
+        slider.SetValueWithoutNotify(savedValue);
         slider.onValueChanged.RemoveAllListeners();
         slider.onValueChanged.AddListener(onChanged);
+        onChanged.Invoke(savedValue);
     }
 
     private void RefreshRecords()
@@ -390,6 +410,15 @@ public class StartMenuController : MonoBehaviour
         if (panel != null)
         {
             panel.SetActive(true);
+        }
+
+        if (panel == settingsPanel)
+        {
+            Transform settingsContent = settingsPanel.transform.Find("Card/SettingsContent");
+            if (settingsContent != null)
+            {
+                StartMenuAudioSettings.PrepareSettingsContent(settingsContent);
+            }
         }
     }
 

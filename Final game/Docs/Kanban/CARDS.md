@@ -104,13 +104,13 @@ Done: changing delay moves prompts only; judgment still follows the music.
 
 ---
 
-## RR-011 Start beat-assist toggle
+## RR-011 Four-column rhythm prompts
 
 E-01 / P1 / Done / 2026-06-10
 
-Beat-assist in Settings persists; when off, Vertical/Advanced hide the four `ControlRhythmPrompt` columns.
+Hierarchy-owned `ControlRhythmPrompt` columns on Vertical and Advanced; shows key/hand cues per beat slot.
 
-Done: toggle saves; runners show/hide prompts correctly; gameplay unchanged.
+Done: prompts visible during gameplay; gameplay judgment unchanged. (An earlier Settings toggle was removed — prompts stay on.)
 
 ---
 

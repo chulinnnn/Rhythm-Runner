@@ -34,9 +34,9 @@ Recommended: **Unity 2022.3.x LTS**, 2D Core template.
 
 The early horizontal bunny runner was archived to [`../BunnyLegacyArchive`](../BunnyLegacyArchive) and is not imported by this project.
 
-## Documentation and submission evidence
+## Documentation
 
-- **Evidence index (all 12 GitHub submission items):** [`Docs/README.md`](Docs/README.md)
+- **Documentation index:** [`Docs/README.md`](Docs/README.md)
 - **Game design document:** [`Docs/GAME_DESIGN_DOCUMENT.md`](Docs/GAME_DESIGN_DOCUMENT.md)
 - **Development log:** [`Docs/DEVELOPMENT_LOG.md`](Docs/DEVELOPMENT_LOG.md)
 - **Asset licenses:** [`Assets/AssetLicenses/ASSET_LICENSES.md`](Assets/AssetLicenses/ASSET_LICENSES.md)

@@ -4,7 +4,7 @@ Attribution for **Rhythm Playground**. Full legal detail: [`Assets/AssetLicenses
 
 ## Code
 
-- **Author:** _(your name)_ — runtime scripts, scene hierarchy, beat systems, editors (see [`SCRIPT_REFERENCE.md`](../SCRIPT_REFERENCE.md)).
+- **Author:** Chulin Zhao — runtime scripts, scene hierarchy, beat systems, editor bakers (see [`SCRIPT_REFERENCE.md`](../SCRIPT_REFERENCE.md)).
 - **AI assistance:** Cursor AI, ChatGPT — see [`AI_USAGE.md`](AI_USAGE.md).
 
 ## Art and UI
@@ -28,14 +28,13 @@ Attribution for **Rhythm Playground**. Full legal detail: [`Assets/AssetLicenses
 - **Unity** 2022.3 LTS — Unity Terms of Service
 - **Git / GitHub** — version control and portfolio hosting
 
-## Pending verification
+## Additional CC0 assets (project owner declaration)
 
-The following still need explicit licence confirmation before commercial release (OK for coursework submission with disclosure):
-
-- Fonts under `Assets/inks`, `Assets/keyboard`, and related folders
-- `Assets/Animations`, `Assets/catsSee`, `Assets/Images`, `Assets/Players`, `Assets/vertical` — see ASSET_LICENSES “needs confirmation” table
-
-Update this file when those are resolved.
+| Folder | Use | Licence |
+|--------|-----|---------|
+| `Assets/inks`, `Assets/keyboard` | Dropping Ink fonts; keyboard prompt art | **CC0** — project author |
+| `Assets/Animations` | Animation clips | **CC0** — project author |
+| `Assets/catsSee`, `Assets/Images`, `Assets/Players`, `Assets/vertical` | Mode sprites and backgrounds | **CC0** — project author |
 
 ## How to credit in demo / report
 

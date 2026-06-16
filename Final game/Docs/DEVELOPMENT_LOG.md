@@ -1,6 +1,6 @@
 # Development Log
 
-Human-readable progress timeline for **Rhythm Playground** (`Final game`). Technical detail lives in [`PROJECT_MEMORY.md`](../PROJECT_MEMORY.md).
+Progress timeline for **Rhythm Playground** (`Final game`). Day-to-day technical notes are in [`PROJECT_MEMORY.md`](../PROJECT_MEMORY.md).
 
 ## Week of 14–20 Apr 2026 — Repository and in-class work
 
@@ -23,28 +23,31 @@ Human-readable progress timeline for **Rhythm Playground** (`Final game`). Techn
 
 ## Week of 2–8 Jun 2026 — Scene merge, Ocean, Vertical, Advanced
 
-- **4–5 Jun** — Legacy bunny archived; Ocean Free Pond; Vertical/Advanced unified scenes; miss counter replaces hearts (see `PROJECT_MEMORY` Jun 4–5).
-- **8 Jun** — Advanced single audio clock; chart slot scheduler; script folder layout (`523fcfb` … `eefbff7` on backup branches).
+- **4–5 Jun** — Legacy bunny archived; Ocean Free Pond; Vertical/Advanced unified scenes; miss counter replaces hearts.
+- **8 Jun** — Advanced single audio clock; chart slot scheduler; script folder layout.
 
-## Week of 9–15 Jun 2026 — Playable vertical slice and submission prep
+## Week of 9–15 Jun 2026 — Playable vertical slice and docs
 
-- **9 Jun** — Git history cleaned after oversized audio files blocked push; playable state preserved (`61ab3ce`).
+- **9 Jun** — Git history cleaned after oversized audio blocked push; playable state preserved (`61ab3ce`).
 - **10 Jun** — Four-column visual prompts for Vertical and Advanced (`606dcdc`, `dc94660`).
-- **11 Jun** — World Music Explorer mode; Start cleanup; **playable** four-mode milestone (`0b44d94`, `e6459c5`); GDD and asset licenses in `Docs/`; EditMode scene tests.
-- **12–15 Jun** — Bilingual code comments; GitHub Kanban bootstrap and workflows (`33da0f6`, `958b8fc`).
-- **15 Jun** — Submission evidence pack (this document set).
+- **11 Jun** — World Music Explorer; Start cleanup; four-mode milestone (`0b44d94`, `e6459c5`); GDD, licenses, EditMode scene tests.
+- **12–15 Jun** — Code comments; GitHub Issues/Kanban sync; documentation folder under `Docs/`.
+
+## Week of 16 Jun 2026 — Submission polish
+
+- **16 Jun** — Asset licence records completed; portfolio docs reviewed; screenshots and final smoke tests (see [`TESTING.md`](TESTING.md)).
 
 ## Milestones (GDD §15)
 
-| Milestone | Target | Status at log date |
-|-----------|--------|-------------------|
+| Milestone | Target | Status |
+|-----------|--------|--------|
 | M0 | Project setup, legacy isolation | Complete |
 | M1 | Main menu + four scenes | Complete |
 | M2 | Ocean Rhythm + bucket | Complete |
 | M3 | Climbing Monkey tutorial + level | Complete |
 | M4 | Dropping Ink chart + lanes | Complete |
 | M5 | Global beat system + editor tools | Complete |
-| M6–M7 | Polish, tests, docs | In progress |
-| M8 | Submission build | Planned |
+| M6–M7 | Polish, tests, docs | Complete |
+| M8 | Submission build | Complete |
 
-See [`Kanban/BOARD.md`](Kanban/BOARD.md) for task-level Done list.
+Task list: [`Kanban/BOARD.md`](Kanban/BOARD.md).

@@ -2,7 +2,7 @@
 
 This file records the asset licenses for this Unity project.
 
-Last updated: 2026-06-11
+Last updated: 2026-06-16
 
 ## Confirmed Local License Files
 
@@ -27,4 +27,11 @@ These entries are recorded from the project owner's statement in this thread.
 | Music assets | CC0, usable in this project | The project owner stated that all music assets are CC0. This includes audio in `Assets/globalmusic`, `Assets/inkmusic`, `Assets/monkeymusic`, `Assets/music`, `Assets/ocean_music`, `Assets/Resources/jinbi.mp3`, `Assets/Resources/shibai.mp3`, and root audio files such as `Assets/DM_20260520232108_001.mp3` and `Assets/DM_20260520232113_001.mp3`. |
 | Background photos | Owned by project owner | The project owner stated that some background images were personally photographed. Keep original source files or notes if available. |
 | Hand-drawn background art | Owned by project owner | The project owner stated that some background images were personally drawn. Keep source PSD/Procreate/Krita files or notes if available. |
+| Ink mode fonts and UI art | CC0, usable in this project | `Assets/inks` — declared CC0 by project owner (2026-06-16). |
+| Keyboard prompt art | CC0, usable in this project | `Assets/keyboard` — declared CC0 by project owner (2026-06-16). |
+| Animation clips | CC0, usable in this project | `Assets/Animations` — declared CC0 by project owner (2026-06-16). |
+| Ocean / pond character art | CC0, usable in this project | `Assets/catsSee` — declared CC0 by project owner (2026-06-16). |
+| General image library | CC0, usable in this project | `Assets/Images` — declared CC0 by project owner (2026-06-16). |
+| Player character sprites | CC0, usable in this project | `Assets/Players` — declared CC0 by project owner (2026-06-16). |
+| Vertical mode art | CC0, usable in this project | `Assets/vertical` — declared CC0 by project owner (2026-06-16). |
 
